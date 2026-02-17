@@ -1,0 +1,53 @@
+// C:\projets\java\edt-generator\frontend\src\app\components\classe-list\classe-list.component.scss
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+  
+  .card-header {
+    border-bottom: none;
+  }
+}
+
+.table {
+  th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom-width: 2px;
+  }
+  
+  td {
+    vertical-align: middle;
+  }
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.5em 1em;
+  
+  &.bg-primary { background-color: #0d6efd !important; }
+  &.bg-success { background-color: #198754 !important; }
+  &.bg-warning { background-color: #ffc107 !important; color: #000; }
+  &.bg-info { background-color: #0dcaf0 !important; }
+  &.bg-secondary { background-color: #6c757d !important; }
+}
+
+.btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pagination {
+  .page-link {
+    border-radius: 5px;
+    margin: 0 2px;
+    
+    &:hover {
+      background-color: #f8f9fa;
+    }
+  }
+  
+  .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+}

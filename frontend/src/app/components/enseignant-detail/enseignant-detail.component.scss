@@ -1,0 +1,84 @@
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+  
+  .card-header {
+    border-bottom: none;
+  }
+  
+  .border-bottom {
+    border-color: #dee2e6 !important;
+  }
+}
+
+.badge {
+  padding: 0.35em 0.65em;
+  font-size: 0.875em;
+}
+
+.progress {
+  border-radius: 4px;
+  
+  .progress-bar {
+    border-radius: 4px;
+  }
+
+/* Ajoutez ceci à votre fichier de styles existant ou créez enseignant-detail.component.scss */
+.matiere-details {
+  padding: 10px;
+}
+
+.debug-info {
+  summary {
+    cursor: pointer;
+    user-select: none;
+    
+    &:hover {
+      color: #495057;
+    }
+  }
+  
+  pre {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.7rem;
+  }
+}
+
+/* Style pour les badges */
+.badge {
+  &.bg-warning {
+    color: #212529;
+  }
+  
+  &.bg-danger {
+    color: white;
+  }
+}
+
+/* Style pour les cartes de matière */
+.card {
+  .card-header {
+    .bi {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .matiere-details {
+    .row {
+      margin-bottom: 0.5rem;
+    }
+    
+    .col-4, .col-8 {
+      padding: 0.25rem;
+    }
+  }
+  
+  .progress {
+    height: 15px !important;
+  }
+}
+}

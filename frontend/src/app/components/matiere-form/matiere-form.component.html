@@ -1,0 +1,121 @@
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-success text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="mb-0">
+            <i class="bi bi-book me-2"></i>
+            {{ isEditMode ? 'Modifier' : 'Ajouter' }} une matière
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-success" role="status" style="width: 4rem; height: 4rem;">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-3 h5">Chargement des données de la matière...</p>
+        <div class="mt-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm" routerLink="/matieres">
+            <i class="bi bi-x-circle me-1"></i> Annuler le chargement
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Content (ONLY show when NOT loading) -->
+      <div *ngIf="!isLoading">
+        <form [formGroup]="matiereForm" (ngSubmit)="onSubmit()">
+          <!-- Code -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="border-bottom pb-2">
+                <i class="bi bi-tag me-2"></i>
+                Informations de la matière
+                <span *ngIf="isEditMode" class="badge bg-warning ms-2">ÉDITION</span>
+                <span *ngIf="!isEditMode" class="badge bg-primary ms-2">CRÉATION</span>
+              </h5>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="code" class="form-label">
+                <i class="bi bi-code me-1"></i> Code *
+              </label>
+              <input type="text" class="form-control" id="code" formControlName="code"
+                     placeholder="Ex: MATH, FRAN, PHYS, INFO"
+                     [class.is-invalid]="code?.invalid && (code?.dirty || code?.touched)">
+              <div class="invalid-feedback" *ngIf="code?.invalid && (code?.dirty || code?.touched)">
+                <span *ngIf="code?.errors?.['required']">Le code est obligatoire</span>
+                <span *ngIf="code?.errors?.['maxlength']">Maximum 10 caractères</span>
+              </div>
+              <div class="form-text">Code unique d'identification de la matière (3-4 lettres)</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="cycle" class="form-label">
+                <i class="bi bi-stack me-1"></i> Cycle *
+              </label>
+              <select class="form-select" id="cycle" formControlName="cycle"
+                      [class.is-invalid]="cycle?.invalid && (cycle?.dirty || cycle?.touched)">
+                <option *ngFor="let cycle of cyclesOptions" [value]="cycle.value">
+                  {{ cycle.label }}
+                </option>
+              </select>
+              <div class="invalid-feedback" *ngIf="cycle?.invalid && (cycle?.dirty || cycle?.touched)">
+                Le cycle est obligatoire
+              </div>
+              <div class="form-text">Cycle d'enseignement (Collège, Lycée, etc.)</div>
+            </div>
+
+            <div class="col-12 mb-3">
+              <label for="nom" class="form-label">
+                <i class="bi bi-card-text me-1"></i> Nom complet *
+              </label>
+              <input type="text" class="form-control" id="nom" formControlName="nom"
+                     placeholder="Ex: Mathématiques, Français, Informatique"
+                     [class.is-invalid]="nom?.invalid && (nom?.dirty || nom?.touched)">
+              <div class="invalid-feedback" *ngIf="nom?.invalid && (nom?.dirty || nom?.touched)">
+                <span *ngIf="nom?.errors?.['required']">Le nom est obligatoire</span>
+                <span *ngIf="nom?.errors?.['maxlength']">Maximum 100 caractères</span>
+              </div>
+              <div class="form-text">Nom complet de la matière</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="niveauClasse" class="form-label">
+                <i class="bi bi-layers me-1"></i> Niveau de classe
+              </label>
+              <select class="form-select" id="niveauClasse" formControlName="niveauClasse">
+                <option value="">-- Sélectionner un niveau --</option>
+                <option *ngFor="let niveau of niveauxClasseOptions" [value]="niveau">
+                  {{ niveau }}
+                </option>
+              </select>
+              <div class="form-text">Optionnel : préciser le niveau de classe spécifique</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <button type="button" class="btn btn-outline-secondary" routerLink="/matieres"
+                    [disabled]="isSubmitting">
+              <i class="bi bi-x-circle me-1"></i> Annuler
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="!matiereForm.valid || isSubmitting">
+              <span *ngIf="!isSubmitting">
+                <i class="bi bi-check-circle me-1"></i>
+                {{ isEditMode ? 'Modifier' : 'Ajouter' }}
+              </span>
+              <span *ngIf="isSubmitting">
+                <span class="spinner-border spinner-border-sm me-1"></span>
+                {{ isEditMode ? 'Modification...' : 'Ajout...' }}
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<div class="notifications-container position-fixed top-0 end-0 p-3" style="z-index: 1050; max-width: 400px;">
+  <div *ngFor="let notification of notifications" 
+       [class]="getNotificationClass(notification)"
+       role="alert"
+       [attr.data-notification-id]="notification.id">
+    <div class="d-flex align-items-center">
+      <i class="bi me-2" [ngClass]="getNotificationIcon(notification)"></i>
+      <div class="flex-grow-1">
+        <strong class="me-2">{{ notification.title }}</strong>
+        <span>{{ notification.message }}</span>
+        
+        <!-- Barre de progression pour les notifications auto-fermantes -->
+        <div *ngIf="notification.autoClose" class="mt-2">
+          <div class="progress" style="height: 3px;">
+            <div class="progress-bar bg-white opacity-75" 
+                 [style.width.%]="getProgressWidth(notification)">
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-close" 
+              (click)="closeNotification(notification.id)"
+              aria-label="Fermer"></button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,127 @@
+<!-- C:\projets\java\edt-generator\frontend\src\app\components\classe-form\classe-form.component.html -->
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="mb-0">
+            <i class="bi bi-mortarboard me-2"></i>
+            {{ isEditMode ? 'Modifier' : 'Ajouter' }} une classe
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-3 h5">Chargement des données de la classe...</p>
+        <div class="mt-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm" routerLink="/classes">
+            <i class="bi bi-x-circle me-1"></i> Annuler le chargement
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Content -->
+      <div *ngIf="!isLoading">
+        <form [formGroup]="classeForm" (ngSubmit)="onSubmit()">
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="border-bottom pb-2">
+                <i class="bi bi-info-circle me-2"></i>
+                Informations de la classe
+                <span *ngIf="isEditMode" class="badge bg-warning ms-2">ÉDITION</span>
+                <span *ngIf="!isEditMode" class="badge bg-success ms-2">CRÉATION</span>
+              </h5>
+            </div>
+
+            <!-- Nom -->
+            <div class="col-md-6 mb-3">
+              <label for="nom" class="form-label">
+                <i class="bi bi-fonts me-1"></i> Nom de la classe *
+              </label>
+              <input type="text" class="form-control" id="nom" formControlName="nom"
+                     placeholder="Ex: 6ème A, Terminale S, BTS Comptabilité"
+                     [class.is-invalid]="nom?.invalid && (nom?.dirty || nom?.touched)">
+              <div class="invalid-feedback" *ngIf="nom?.invalid && (nom?.dirty || nom?.touched)">
+                <span *ngIf="nom?.errors?.['required']">Le nom est obligatoire</span>
+                <span *ngIf="nom?.errors?.['maxlength']">Maximum 50 caractères</span>
+              </div>
+              <div class="form-text">Nom unique d'identification de la classe</div>
+            </div>
+
+            <!-- Niveau -->
+            <div class="col-md-6 mb-3">
+              <label for="niveau" class="form-label">
+                <i class="bi bi-stack me-1"></i> Niveau *
+              </label>
+              <select class="form-select" id="niveau" formControlName="niveau"
+                      [class.is-invalid]="niveau?.invalid && (niveau?.dirty || niveau?.touched)">
+                <option *ngFor="let niveau of niveauxOptions" [value]="niveau">
+                  {{ niveau }}
+                </option>
+              </select>
+              <div class="invalid-feedback" *ngIf="niveau?.invalid && (niveau?.dirty || niveau?.touched)">
+                Le niveau est obligatoire
+              </div>
+            </div>
+
+            <!-- Filière -->
+            <div class="col-md-6 mb-3">
+              <label for="filiere" class="form-label">
+                <i class="bi bi-diagram-3 me-1"></i> Filière *
+              </label>
+              <select class="form-select" id="filiere" formControlName="filiere"
+                      [class.is-invalid]="filiere?.invalid && (filiere?.dirty || filiere?.touched)">
+                <option *ngFor="let filiere of filieresOptions" [value]="filiere">
+                  {{ filiere }}
+                </option>
+              </select>
+              <div class="invalid-feedback" *ngIf="filiere?.invalid && (filiere?.dirty || filiere?.touched)">
+                La filière est obligatoire
+              </div>
+            </div>
+
+            <!-- Effectif -->
+            <div class="col-md-6 mb-3">
+              <label for="effectif" class="form-label">
+                <i class="bi bi-people me-1"></i> Effectif *
+              </label>
+              <input type="number" class="form-control" id="effectif" formControlName="effectif"
+                     min="1" max="50"
+                     [class.is-invalid]="effectif?.invalid && (effectif?.dirty || effectif?.touched)">
+              <div class="invalid-feedback" *ngIf="effectif?.invalid && (effectif?.dirty || effectif?.touched)">
+                <span *ngIf="effectif?.errors?.['required']">L'effectif est obligatoire</span>
+                <span *ngIf="effectif?.errors?.['min']">Minimum 1 élève</span>
+                <span *ngIf="effectif?.errors?.['max']">Maximum 50 élèves</span>
+              </div>
+              <div class="form-text">Nombre d'élèves dans la classe</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <button type="button" class="btn btn-outline-secondary" routerLink="/classes"
+                    [disabled]="isSubmitting">
+              <i class="bi bi-x-circle me-1"></i> Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="!classeForm.valid || isSubmitting">
+              <span *ngIf="!isSubmitting">
+                <i class="bi bi-check-circle me-1"></i>
+                {{ isEditMode ? 'Modifier' : 'Ajouter' }}
+              </span>
+              <span *ngIf="isSubmitting">
+                <span class="spinner-border spinner-border-sm me-1"></span>
+                {{ isEditMode ? 'Modification...' : 'Ajout...' }}
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

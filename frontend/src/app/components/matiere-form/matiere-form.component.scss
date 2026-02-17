@@ -1,0 +1,39 @@
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+  
+  .card-header {
+    border-bottom: none;
+  }
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.form-control, .form-select {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+
+  &:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+  }
+
+  &.is-invalid {
+    border-color: #dc3545;
+  }
+}
+
+.border-bottom {
+  border-color: #dee2e6 !important;
+}
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+
+  i {
+    font-size: 0.9em;
+  }
+}

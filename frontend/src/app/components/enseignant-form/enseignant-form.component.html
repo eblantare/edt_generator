@@ -1,0 +1,196 @@
+<div class="container mt-4">
+
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="bi bi-person-plus me-2"></i>
+        {{ isEditMode ? 'Modifier' : 'Ajouter' }} un enseignant
+      </h3>
+    </div>
+
+    <div class="card-body">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <div class="mt-2">
+          {{ isEditMode ? 'Chargement des données...' : 'Chargement des matières...' }}
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading" [formGroup]="enseignantForm" (ngSubmit)="onSubmit()">
+        <!-- Informations personnelles -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h5 class="border-bottom pb-2">
+              <i class="bi bi-person-badge me-2"></i>
+              Informations personnelles
+            </h5>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="nom" class="form-label">
+              <i class="bi bi-person me-1"></i> Nom *
+            </label>
+            <input type="text" class="form-control" id="nom" formControlName="nom"
+                   [class.is-invalid]="nom?.invalid && (nom?.dirty || nom?.touched)">
+            <div class="invalid-feedback" *ngIf="nom?.invalid && (nom?.dirty || nom?.touched)">
+              <span *ngIf="nom?.errors?.['required']">Le nom est obligatoire</span>
+              <span *ngIf="nom?.errors?.['minlength']">Minimum 2 caractères</span>
+              <span *ngIf="nom?.errors?.['maxlength']">Maximum 50 caractères</span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="prenom" class="form-label">
+              <i class="bi bi-person me-1"></i> Prénom *
+            </label>
+            <input type="text" class="form-control" id="prenom" formControlName="prenom"
+                   [class.is-invalid]="prenom?.invalid && (prenom?.dirty || prenom?.touched)">
+            <div class="invalid-feedback" *ngIf="prenom?.invalid && (prenom?.dirty || prenom?.touched)">
+              <span *ngIf="prenom?.errors?.['required']">Le prénom est obligatoire</span>
+              <span *ngIf="prenom?.errors?.['minlength']">Minimum 2 caractères</span>
+              <span *ngIf="prenom?.errors?.['maxlength']">Maximum 50 caractères</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matricule et Contact -->
+        <div class="row mb-4">
+          <div class="col-md-6 mb-3">
+            <label for="matricule" class="form-label">
+              <i class="bi bi-qr-code me-1"></i> Matricule *
+            </label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="matricule" formControlName="matricule"
+                     placeholder="Saisir ou générer"
+                     [class.is-invalid]="matricule?.invalid && (matricule?.dirty || matricule?.touched)">
+              <button type="button" class="btn btn-outline-secondary"
+                      (click)="generateMatricule()"
+                      [disabled]="isGeneratingMatricule || !nom?.value || !prenom?.value">
+                <i class="bi bi-magic" *ngIf="!isGeneratingMatricule"></i>
+                <span class="spinner-border spinner-border-sm" *ngIf="isGeneratingMatricule"></span>
+                Générer
+              </button>
+            </div>
+            <div class="form-text">6 à 8 caractères maximum</div>
+            <div class="invalid-feedback" *ngIf="matricule?.invalid && (matricule?.dirty || matricule?.touched)">
+              <span *ngIf="matricule?.errors?.['required']">Le matricule est obligatoire</span>
+              <span *ngIf="matricule?.errors?.['minlength']">Minimum 3 caractères</span>
+              <span *ngIf="matricule?.errors?.['maxlength']">Maximum 8 caractères</span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="email" class="form-label">
+              <i class="bi bi-envelope me-1"></i> Email *
+            </label>
+            <input type="email" class="form-control" id="email" formControlName="email"
+                   [class.is-invalid]="email?.invalid && (email?.dirty || email?.touched)">
+            <div class="invalid-feedback" *ngIf="email?.invalid && (email?.dirty || email?.touched)">
+              <span *ngIf="email?.errors?.['required']">L'email est obligatoire</span>
+              <span *ngIf="email?.errors?.['email']">Format d'email invalide</span>
+              <span *ngIf="email?.errors?.['maxlength']">Maximum 100 caractères</span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="telephone" class="form-label">
+              <i class="bi bi-telephone me-1"></i> Téléphone
+            </label>
+            <input type="tel" class="form-control" id="telephone" formControlName="telephone"
+                   placeholder="Ex: +228 78 45 67 89"
+                   [class.is-invalid]="telephone?.invalid && (telephone?.dirty || telephone?.touched)">
+            <div class="invalid-feedback" *ngIf="telephone?.invalid && (telephone?.dirty || telephone?.touched)">
+              Format de téléphone invalide (seulement chiffres, + et espaces)
+            </div>
+            <div class="form-text">Optionnel</div>
+          </div>
+        </div>
+
+        <!-- Matières enseignées -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h5 class="border-bottom pb-2">
+              <i class="bi bi-book me-2"></i>
+              Matières enseignées
+            </h5>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="matiereDominante" class="form-label">
+              <i class="bi bi-star-fill text-warning me-1"></i> Matière dominante
+            </label>
+            <select class="form-select" id="matiereDominante" formControlName="matiereDominanteId">
+              <option value="">-- Sélectionner --</option>
+              <option *ngFor="let matiere of matieres" [value]="matiere.id">
+                {{ matiere.code }} - {{ matiere.nom }} ({{ matiere.cycle }})
+              </option>
+            </select>
+            <div class="form-text">Optionnel</div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="matiereSecondaire" class="form-label">
+              <i class="bi bi-star text-secondary me-1"></i> Matière secondaire
+            </label>
+            <select class="form-select" id="matiereSecondaire" formControlName="matiereSecondaireId">
+              <option value="">-- Sélectionner --</option>
+              <option *ngFor="let matiere of matieres" [value]="matiere.id">
+                {{ matiere.code }} - {{ matiere.nom }} ({{ matiere.cycle }})
+              </option>
+            </select>
+            <div class="form-text">Optionnel</div>
+          </div>
+        </div>
+
+        <!-- Disponibilité -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <h5 class="border-bottom pb-2">
+              <i class="bi bi-clock me-2"></i>
+              Disponibilité
+            </h5>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="heuresMaxHebdo" class="form-label">
+              <i class="bi bi-calendar-week me-1"></i> Heures max/semaine *
+            </label>
+            <input type="range" class="form-range mb-2" id="heuresMaxHebdo"
+                   min="1" max="28" step="1"
+                   formControlName="heuresMaxHebdo">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="badge bg-secondary fs-6">{{ heuresMaxHebdo?.value || 16 }} heures</span>
+              <small class="text-muted">1 - 28 heures (maximum autorisé)</small>
+            </div>
+            <div class="invalid-feedback" *ngIf="heuresMaxHebdo?.invalid && (heuresMaxHebdo?.dirty || heuresMaxHebdo?.touched)">
+              <span *ngIf="heuresMaxHebdo?.errors?.['required']">Les heures max sont obligatoires</span>
+              <span *ngIf="heuresMaxHebdo?.errors?.['min']">Minimum 1 heure</span>
+              <span *ngIf="heuresMaxHebdo?.errors?.['max']">Maximum 28 heures</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" routerLink="/enseignants"
+                  [disabled]="isSubmitting">
+            <i class="bi bi-x-circle me-1"></i> Annuler
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="!enseignantForm.valid || isSubmitting">
+            <span *ngIf="!isSubmitting">
+              <i class="bi bi-check-circle me-1"></i>
+              {{ isEditMode ? 'Modifier' : 'Ajouter' }}
+            </span>
+            <span *ngIf="isSubmitting">
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              {{ isEditMode ? 'Modification...' : 'Ajout...' }}
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

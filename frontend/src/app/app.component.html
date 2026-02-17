@@ -1,0 +1,50 @@
+<!-- C:\projets\java\edt-generator\frontend\src\app\app.component.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" routerLink="/">EDT Generator</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <!-- Enseignants -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/enseignants" routerLinkActive="active">
+            <i class="bi bi-people me-1"></i> Enseignants
+          </a>
+        </li>
+        <!-- Matières -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/matieres" routerLinkActive="active">
+            <i class="bi bi-book me-1"></i> Matières
+          </a>
+        </li>
+        <!-- Classes -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/classes" routerLinkActive="active">
+            <i class="bi bi-mortarboard me-1"></i> Classes
+          </a>
+        </li>
+        <!-- Enseignements (NOUVEAU) -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/enseignements" routerLinkActive="active">
+            <i class="bi bi-link-45deg me-1"></i> Attributions
+          </a>
+        </li>
+        <!-- Génération -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/generation" routerLinkActive="active">
+            <i class="bi bi-calendar-week me-1"></i> Génération
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Notifications globales -->
+<app-notification></app-notification>
+
+<div class="container-fluid">
+  <router-outlet></router-outlet>
+</div>

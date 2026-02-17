@@ -1,0 +1,309 @@
+<!-- C:\projets\java\edt-generator\frontend\src\app\components\enseignant-list\enseignant-list.component.html -->
+<div class="container mt-4">
+  <!-- Confirmation Modal -->
+  <app-confirmation-modal
+    [showModal]="showDeleteModal"
+    [title]="deleteModalTitle"
+    [message]="deleteModalMessage"
+    [confirmButtonText]="'Oui, supprimer'"
+    [cancelButtonText]="'Non, annuler'"
+    [confirmButtonClass]="'btn-danger'"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+    (modalClosed)="onDeleteCancelled()">
+  </app-confirmation-modal>
+
+  <!-- Header avec bouton d'ajout -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h3 class="mb-0">
+        <i class="bi bi-people me-2"></i>
+        Gestion des Enseignants
+      </h3>
+      <button type="button" class="btn btn-light" routerLink="/enseignants/new">
+        <i class="bi bi-plus-circle me-1"></i> Nouvel enseignant
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre de recherche et filtres -->
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <!-- Barre de recherche -->
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control"
+                   [(ngModel)]="searchTerm"
+                   (keyup.enter)="onSearch()"
+                   placeholder="Rechercher par nom, prénom, matricule ou email..."
+                   [disabled]="isLoading">
+            <button class="btn btn-outline-secondary" type="button"
+                    (click)="onSearch()"
+                    [disabled]="isLoading">
+              <i class="bi bi-search"></i>
+            </button>
+            <button *ngIf="searchTerm" class="btn btn-outline-danger" type="button"
+                    (click)="clearSearch()"
+                    [disabled]="isLoading">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nombre d'éléments par page -->
+        <div class="col-md-3">
+          <label for="pageSizeSelect" class="form-label">Éléments par page</label>
+          <select class="form-select" id="pageSizeSelect"
+                  [(ngModel)]="pageSize"
+                  (change)="onPageSizeChange()"
+                  [disabled]="isLoading">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">
+              {{ size }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Afficher le nombre total -->
+        <div class="col-md-3 text-end">
+          <div class="text-muted">
+            <strong>{{ totalElements }}</strong> enseignant{{ totalElements !== 1 ? 's' : '' }}
+          </div>
+          <div class="text-muted small" *ngIf="searchTerm">
+            Résultats pour "{{ searchTerm }}"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table des enseignants -->
+  <div class="card shadow">
+    <!-- Loading Overlay -->
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+      <div class="mt-2">Chargement des enseignants...</div>
+    </div>
+
+    <!-- Table - SEULEMENT quand pas de chargement -->
+    <div *ngIf="!isLoading" class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th (click)="sort('nom')" style="cursor: pointer;">
+              Nom
+              <i class="bi ms-1" [ngClass]="getSortIcon('nom')"></i>
+            </th>
+            <th (click)="sort('prenom')" style="cursor: pointer;">
+              Prénom
+              <i class="bi ms-1" [ngClass]="getSortIcon('prenom')"></i>
+            </th>
+            <th (click)="sort('matricule')" style="cursor: pointer;">
+              Matricule
+              <i class="bi ms-1" [ngClass]="getSortIcon('matricule')"></i>
+            </th>
+            <th>Matière dominante</th>
+            <th>Matière secondaire</th>
+            <th class="text-center" (click)="sort('heuresMaxHebdo')" style="cursor: pointer;">
+              Heures max/semaine
+              <i class="bi ms-1" [ngClass]="getSortIcon('heuresMaxHebdo')"></i>
+            </th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Données -->
+          <tr *ngFor="let enseignant of enseignants" class="align-middle">
+            <td><strong>{{ enseignant.nom }}</strong></td>
+            <td>{{ enseignant.prenom }}</td>
+            <td>
+              <span class="badge bg-info">
+                {{ enseignant.matricule }}
+              </span>
+            </td>
+            <td>
+              <!-- Matière dominante -->
+              <div *ngIf="enseignant.matiereDominante; else noDominante" class="matiere-item">
+                <span class="badge bg-warning me-1">
+                  <i class="bi bi-star-fill"></i>
+                </span>
+                <div>
+                  <div class="matiere-code">{{ enseignant.matiereDominante.code }}</div>
+                  <div class="matiere-nom small text-muted">{{ enseignant.matiereDominante.nom }}</div>
+                  <!-- Cycle optionnel (désactivé par défaut) -->
+                  <div *ngIf="enseignant.matiereDominante.cycle" class="extra-small mt-1">
+                    <span class="badge" [ngClass]="getCycleBadgeClass(enseignant.matiereDominante.cycle)">
+                      {{ getCycleDisplayName(enseignant.matiereDominante.cycle) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noDominante>
+                <div class="text-muted small">-</div>
+              </ng-template>
+            </td>
+            <td>
+              <!-- Matière secondaire -->
+              <div *ngIf="enseignant.matiereSecondaire; else noSecondaire" class="matiere-item">
+                <span class="badge bg-secondary me-1">
+                  <i class="bi bi-book"></i>
+                </span>
+                <div>
+                  <div class="matiere-code">{{ enseignant.matiereSecondaire.code }}</div>
+                  <div class="matiere-nom small text-muted">{{ enseignant.matiereSecondaire.nom }}</div>
+                  <!-- Cycle optionnel (désactivé par défaut) -->
+                  <div *ngIf="enseignant.matiereSecondaire.cycle" class="extra-small mt-1">
+                    <span class="badge" [ngClass]="getCycleBadgeClass(enseignant.matiereSecondaire.cycle)">
+                      {{ getCycleDisplayName(enseignant.matiereSecondaire.cycle) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noSecondaire>
+                <div class="text-muted small">-</div>
+              </ng-template>
+            </td>
+            <td class="text-center">
+              <!-- Barre de progression avec tooltip -->
+              <div class="d-flex flex-column align-items-center">
+                <div class="mb-1">{{ enseignant.heuresMaxHebdo }}h</div>
+                <div class="progress" style="height: 10px; width: 100px;"
+                     [class]="getProgressBarClass(enseignant.heuresMaxHebdo)">
+                  <div class="progress-bar" role="progressbar"
+                       [style.width.%]="getProgressBarWidth(enseignant.heuresMaxHebdo)"
+                       [attr.aria-valuenow]="enseignant.heuresMaxHebdo"
+                       aria-valuemin="0"
+                       aria-valuemax="28">
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm" role="group">
+                <!-- Bouton Modifier -->
+                <button type="button" class="btn btn-outline-warning"
+                        [routerLink]="['/enseignants/edit', enseignant.id]"
+                        title="Modifier"
+                        [disabled]="isLoading">
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <!-- Bouton Voir détails -->
+                <button type="button" class="btn btn-outline-info"
+                        [routerLink]="['/enseignants', enseignant.id]"
+                        title="Voir détails"
+                        [disabled]="isLoading">
+                  <i class="bi bi-eye"></i>
+                </button>
+
+                <!-- Bouton Supprimer -->
+                <button type="button" class="btn btn-outline-danger"
+                        (click)="confirmDeleteEnseignant(enseignant.id!)"
+                        title="Supprimer"
+                        [disabled]="isLoading">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="enseignants.length === 0">
+            <td colspan="7" class="text-center py-5">
+              <div class="text-muted">
+                <i class="bi bi-people display-6 d-block mb-2"></i>
+                <div *ngIf="searchTerm">
+                  Aucun enseignant ne correspond à votre recherche "{{ searchTerm }}"
+                </div>
+                <div *ngIf="!searchTerm">
+                  Aucun enseignant trouvé
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary mt-2" routerLink="/enseignants/new">
+                <i class="bi bi-plus-circle me-1"></i> Ajouter le premier enseignant
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination complète -->
+    <div *ngIf="totalPages > 1 && !isLoading" class="card-footer">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          Affichage de
+          <strong>{{ getDisplayStart() }}</strong>
+          à
+          <strong>{{ getDisplayEnd() }}</strong>
+          sur
+          <strong>{{ totalElements }}</strong>
+          enseignant{{ totalElements !== 1 ? 's' : '' }}
+        </div>
+
+        <nav aria-label="Pagination">
+          <ul class="pagination pagination-sm mb-0">
+            <!-- Premier -->
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(0)"
+                 [class.disabled]="currentPage === 0">
+                <i class="bi bi-chevron-double-left"></i>
+              </a>
+            </li>
+
+            <!-- Précédent -->
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(currentPage - 1)"
+                 [class.disabled]="currentPage === 0">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+
+            <!-- Pages numérotées -->
+            <li *ngFor="let page of getPaginationPages()" class="page-item"
+                [class.active]="page === currentPage">
+              <a *ngIf="page === '...'" class="page-link">...</a>
+              <a *ngIf="page !== '...'" class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange($any(page))">
+                {{ getPageDisplayNumber(page) }}
+              </a>
+            </li>
+
+            <!-- Suivant -->
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(currentPage + 1)"
+                 [class.disabled]="currentPage === totalPages - 1">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+
+            <!-- Dernier -->
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(totalPages - 1)"
+                 [class.disabled]="currentPage === totalPages - 1">
+                <i class="bi bi-chevron-double-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted">Aller à la page:</span>
+          <div class="input-group input-group-sm" style="width: 80px;">
+            <input type="number" class="form-control" min="1" [max]="totalPages"
+                   #pageInput
+                   [value]="currentPage + 1"
+                   (keyup.enter)="goToPage(pageInput.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

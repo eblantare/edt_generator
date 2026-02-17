@@ -1,0 +1,194 @@
+<!-- C:\projets\java\edt-generator\frontend\src\app\components\classe-details\classe-details.component.html -->
+<div class="container mt-4">
+  <div class="card shadow">
+    <!-- Header -->
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">
+          <i class="bi bi-mortarboard me-2"></i>
+          Détails de la classe
+        </h3>
+        <div class="btn-group">
+          <button type="button" class="btn btn-light"
+            [routerLink]="hasValidId() ? ['/classes/edit', getClasseId()] : null"
+            [disabled]="!hasValidId()">
+            <i class="bi bi-pencil me-1"></i> Modifier
+          </button>
+          <button type="button" class="btn btn-outline-light" routerLink="/classes">
+            <i class="bi bi-arrow-left me-1"></i> Retour
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+      <p class="mt-2">Chargement des détails...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !isLoading" class="alert alert-danger m-3">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      {{ errorMessage }}
+      <button class="btn btn-sm btn-outline-danger ms-3" (click)="reloadClasse()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Réessayer
+      </button>
+    </div>
+
+    <!-- Classe Details -->
+    <div *ngIf="!isLoading && classe" class="card-body">
+      <div class="row">
+        <!-- Informations principales -->
+        <div class="col-md-8 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Informations de la classe
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-4">
+                <label class="form-label text-muted small">Nom de la classe</label>
+                <div class="h2 text-primary">{{ classe.nom }}</div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label text-muted small">Niveau</label>
+                  <div>
+                    <span class="badge fs-6 p-2" [ngClass]="getNiveauBadgeClass(classe.niveau)">
+                      {{ classe.niveau }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label text-muted small">Filière</label>
+                  <div>
+                    <span class="badge fs-6 p-2" [ngClass]="getFiliereBadgeClass(classe.filiere)">
+                      {{ classe.filiere }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label class="form-label text-muted small">Effectif</label>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-people-fill text-primary fs-4 me-3"></i>
+                    <div>
+                      <div class="h3 mb-0">{{ classe.effectif }}</div>
+                      <div class="text-muted">élèves</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">
+                <i class="bi bi-bar-chart me-2"></i>
+                Statistiques
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="text-center">
+                <div class="display-6 text-primary">{{ classe.effectif }}</div>
+                <div class="text-muted mb-4">Élèves inscrits</div>
+                
+                <div class="progress mb-3" style="height: 25px;">
+                  <div class="progress-bar bg-success" role="progressbar" 
+                       [style.width.%]="getEffectifPercentage(classe.effectif)"
+                       [attr.aria-valuenow]="classe.effectif" 
+                       aria-valuemin="0" 
+                       aria-valuemax="50">
+                    {{ getEffectifPercentage(classe.effectif) }}%
+                  </div>
+                </div>
+                <small class="text-muted">Capacité de la classe</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations supplémentaires -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">
+                <i class="bi bi-calendar3 me-2"></i>
+                Informations supplémentaires
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label text-muted small">Statut</label>
+                  <div>
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle me-1"></i> Active
+                    </span>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label text-muted small">Dernière mise à jour</label>
+                  <div>{{ today | date:'dd/MM/yyyy HH:mm' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 pt-3 border-top">
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary" routerLink="/classes">
+            <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+          </button>
+          <div class="btn-group">
+            <button type="button" class="btn btn-warning"
+              [routerLink]="hasValidId() ? ['/classes/edit', getClasseId()] : null"
+              [disabled]="!hasValidId()">
+              <i class="bi bi-pencil me-1"></i> Modifier
+            </button>
+            <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+              <i class="bi bi-trash me-1"></i> Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && !errorMessage && !classe" class="text-center py-5">
+      <div class="text-muted">
+        <i class="bi bi-mortarboard display-6 d-block mb-2"></i>
+        Classe non trouvée
+      </div>
+      <button type="button" class="btn btn-primary mt-2" routerLink="/classes">
+        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<app-confirmation-modal
+  [showModal]="showDeleteModal"
+  [title]="'Confirmation de suppression'"
+  [message]="'Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est irréversible.'"
+  [confirmButtonText]="'Oui, supprimer'"
+  [cancelButtonText]="'Non, annuler'"
+  [confirmButtonClass]="'btn-danger'"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()">
+</app-confirmation-modal>

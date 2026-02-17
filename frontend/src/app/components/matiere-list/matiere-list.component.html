@@ -1,0 +1,278 @@
+<div class="container mt-4">
+  <!-- Confirmation Modal -->
+  <app-confirmation-modal
+    [showModal]="showDeleteModal"
+    [title]="deleteModalTitle"
+    [message]="deleteModalMessage"
+    [confirmButtonText]="'Oui, supprimer'"
+    [cancelButtonText]="'Non, annuler'"
+    [confirmButtonClass]="'btn-danger'"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()"
+    (modalClosed)="onDeleteCancelled()">
+  </app-confirmation-modal>
+
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <h3 class="mb-0">
+        <i class="bi bi-book me-2"></i>
+        Gestion des Matières
+      </h3>
+      <button type="button" class="btn btn-light" routerLink="/matieres/new">
+        <i class="bi bi-plus-circle me-1"></i> Nouvelle matière
+      </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <!-- Search Bar -->
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control"
+                   [(ngModel)]="searchTerm"
+                   (keyup.enter)="onSearch()"
+                   placeholder="Rechercher par code, nom ou cycle..."
+                   [disabled]="isLoading">
+            <button class="btn btn-outline-success" type="button"
+                    (click)="onSearch()"
+                    [disabled]="isLoading">
+              <i class="bi bi-search"></i>
+            </button>
+            <button *ngIf="searchTerm" class="btn btn-outline-danger" type="button"
+                    (click)="clearSearch()"
+                    [disabled]="isLoading">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Items per page -->
+        <div class="col-md-3">
+          <label for="pageSizeSelect" class="form-label">Éléments par page</label>
+          <select class="form-select" id="pageSizeSelect"
+                  [(ngModel)]="pageSize"
+                  (change)="onPageSizeChange()"
+                  [disabled]="isLoading">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">
+              {{ size }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Total count -->
+        <div class="col-md-3 text-end">
+          <div class="text-muted">
+            <strong>{{ totalElements }}</strong> matière{{ totalElements !== 1 ? 's' : '' }}
+          </div>
+          <div class="text-muted small" *ngIf="searchTerm">
+            Résultats pour "{{ searchTerm }}"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card shadow">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-success" style="width: 3rem; height: 3rem;"></div>
+      <div class="mt-2">Chargement des matières...</div>
+    </div>
+
+    <!-- Table Content -->
+    <div *ngIf="!isLoading" class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th (click)="sort('code')" style="cursor: pointer;">
+              Code
+              <i class="bi ms-1" [ngClass]="getSortIcon('code')"></i>
+            </th>
+            <th (click)="sort('nom')" style="cursor: pointer;">
+              Nom
+              <i class="bi ms-1" [ngClass]="getSortIcon('nom')"></i>
+            </th>
+            <th (click)="sort('cycle')" style="cursor: pointer;">
+              Cycle
+              <i class="bi ms-1" [ngClass]="getSortIcon('cycle')"></i>
+            </th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data Rows -->
+          <tr *ngFor="let matiere of matieres" class="align-middle">
+            <td>
+              <!-- Lien vers les détails avec vérification d'ID -->
+              <div *ngIf="isValidMatiere(matiere)">
+                <a [routerLink]="['/matieres', matiere.id]"
+                   class="text-decoration-none">
+                  <strong class="text-success">{{ matiere.code }}</strong>
+                </a>
+                <!-- ID RETIRÉ - Version finale propre -->
+                <div *ngIf="matiere.id && matiere.id.includes('temp_')" class="mt-1">
+                  <small class="text-warning">
+                    <i class="bi bi-exclamation-triangle"></i> ID temporaire
+                  </small>
+                </div>
+              </div>
+              <div *ngIf="!isValidMatiere(matiere)">
+                <strong class="text-danger" title="ID manquant">{{ matiere.code }}</strong>
+                <br>
+                <small class="text-danger">
+                  <i class="bi bi-exclamation-triangle"></i> ID manquant ou invalide
+                </small>
+              </div>
+            </td>
+            <td>{{ matiere.nom }}</td>
+            <td>
+              <span class="badge" [ngClass]="getCycleBadgeClass(matiere.cycle)">
+                {{ getCycleDisplayName(matiere.cycle) }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm" role="group">
+                <!-- View Button -->
+                <button type="button" class="btn btn-outline-info"
+                        [routerLink]="isValidMatiere(matiere) && matiere.id ? ['/matieres', matiere.id] : null"
+                        [disabled]="!isValidMatiere(matiere)"
+                        [title]="isValidMatiere(matiere) ? 'Voir détails' : 'ID manquant'">
+                  <i class="bi bi-eye"></i>
+                </button>
+
+                <!-- Edit Button -->
+                <button type="button" class="btn btn-outline-warning"
+                        [routerLink]="isValidMatiere(matiere) && matiere.id ? ['/matieres/edit', matiere.id] : null"
+                        [disabled]="!isValidMatiere(matiere)"
+                        [title]="isValidMatiere(matiere) ? 'Modifier' : 'ID manquant'">
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <!-- Delete Button -->
+                <button type="button" class="btn btn-outline-danger"
+                        (click)="matiere.id ? confirmDeleteMatiere(matiere.id) : null"
+                        [disabled]="!isValidMatiere(matiere) || (matiere.id && matiere.id.includes('temp_'))"
+                        [title]="(matiere.id && matiere.id.includes('temp_')) ? 'ID temporaire' : (isValidMatiere(matiere) ? 'Supprimer' : 'ID manquant')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <!-- Afficher un warning pour les IDs temporaires -->
+              <div *ngIf="matiere.id && matiere.id.includes('temp_')" class="mt-1">
+                <small class="text-danger">
+                  <i class="bi bi-exclamation-triangle"></i> ID temporaire - Rechargez la page
+                </small>
+              </div>
+
+              <!-- Afficher un warning si pas d'ID valide -->
+              <div *ngIf="!isValidMatiere(matiere)" class="mt-1">
+                <small class="text-warning">
+                  <i class="bi bi-info-circle"></i> Non modifiable
+                </small>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="matieres.length === 0">
+            <td colspan="4" class="text-center py-5">
+              <div class="text-muted">
+                <i class="bi bi-book display-6 d-block mb-2"></i>
+                <div *ngIf="searchTerm">
+                  Aucune matière ne correspond à votre recherche "{{ searchTerm }}"
+                </div>
+                <div *ngIf="!searchTerm">
+                  Aucune matière trouvée
+                </div>
+              </div>
+              <button type="button" class="btn btn-success mt-2" routerLink="/matieres/new">
+                <i class="bi bi-plus-circle me-1"></i> Ajouter la première matière
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1 && !isLoading" class="card-footer">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          Affichage de
+          <strong>{{ getDisplayStart() }}</strong>
+          à
+          <strong>{{ getDisplayEnd() }}</strong>
+          sur
+          <strong>{{ totalElements }}</strong>
+          matière{{ totalElements !== 1 ? 's' : '' }}
+        </div>
+
+        <nav aria-label="Pagination">
+          <ul class="pagination pagination-sm mb-0">
+            <!-- First -->
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(0)"
+                 [class.disabled]="currentPage === 0">
+                <i class="bi bi-chevron-double-left"></i>
+              </a>
+            </li>
+
+            <!-- Previous -->
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(currentPage - 1)"
+                 [class.disabled]="currentPage === 0">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+
+            <!-- Page Numbers -->
+            <li *ngFor="let page of getPaginationPages()" class="page-item"
+                [class.active]="page === currentPage">
+              <a *ngIf="page === '...'" class="page-link">...</a>
+              <a *ngIf="page !== '...'" class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange($any(page))">
+                {{ getPageDisplayNumber(page) }}
+              </a>
+            </li>
+
+            <!-- Next -->
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(currentPage + 1)"
+                 [class.disabled]="currentPage === totalPages - 1">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+
+            <!-- Last -->
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <a class="page-link" href="javascript:void(0)"
+                 (click)="onPageChange(totalPages - 1)"
+                 [class.disabled]="currentPage === totalPages - 1">
+                <i class="bi bi-chevron-double-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted">Aller à la page:</span>
+          <div class="input-group input-group-sm" style="width: 80px;">
+            <input type="number" class="form-control" min="1" [max]="totalPages"
+                   #pageInput
+                   [value]="currentPage + 1"
+                   (keyup.enter)="goToPage(pageInput.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

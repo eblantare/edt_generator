@@ -1,0 +1,25 @@
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+
+  .card-header {
+    border-bottom: none;
+  }
+}
+
+.badge {
+  padding: 0.5em 1em;
+  font-size: 1em;
+}
+
+.text-monospace {
+  font-family: 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+h4 {
+  color: #0d6efd;
+}

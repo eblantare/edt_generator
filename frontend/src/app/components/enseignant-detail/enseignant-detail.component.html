@@ -1,0 +1,330 @@
+<!-- C:\projets\java\edt-generator\frontend\src\app\components\enseignant-detail\enseignant-detail.component.html -->
+<div class="container mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h3 class="mb-0">
+        <i class="bi bi-person-badge me-2"></i>
+        Détails de l'Enseignant
+      </h3>
+      <div class="btn-group">
+        <button type="button" class="btn btn-light" routerLink="/enseignants">
+          <i class="bi bi-arrow-left me-1"></i> Retour
+        </button>
+        <button *ngIf="enseignant?.id" type="button" class="btn btn-warning"
+                [routerLink]="['/enseignants/edit', enseignant?.id]">
+          <i class="bi bi-pencil me-1"></i> Modifier
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <div class="mt-2">Chargement des détails...</div>
+        <div class="mt-2 small text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          Patientez pendant le chargement des données
+          <br>
+          <strong>ID:</strong> {{enseignantId}}
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div *ngIf="!isLoading && enseignant" class="row">
+        <!-- Informations personnelles -->
+        <div class="col-md-6 mb-4">
+          <h5 class="border-bottom pb-2 mb-3">
+            <i class="bi bi-person-badge me-2"></i>
+            Informations personnelles
+          </h5>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Nom:</div>
+            <div class="col-8">{{ enseignant.nom }}</div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Prénom:</div>
+            <div class="col-8">{{ enseignant.prenom }}</div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Matricule:</div>
+            <div class="col-8">
+              <span class="badge bg-info">{{ enseignant.matricule }}</span>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Email:</div>
+            <div class="col-8">
+              <a *ngIf="enseignant.email" href="mailto:{{ enseignant.email }}" class="text-decoration-none">
+                {{ enseignant.email }}
+              </a>
+              <span *ngIf="!enseignant.email" class="text-muted">Non renseigné</span>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Téléphone:</div>
+            <div class="col-8">
+              <span *ngIf="enseignant.telephone; else noPhone">
+                {{ enseignant.telephone }}
+              </span>
+              <ng-template #noPhone>
+                <span class="text-muted">Non renseigné</span>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4 fw-bold">Heures max/semaine:</div>
+            <div class="col-8">
+              <span class="badge" [ngClass]="getProgressBarClass(enseignant.heuresMaxHebdo)">
+                {{ enseignant.heuresMaxHebdo }}h
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matières et Disponibilité -->
+        <div class="col-md-6 mb-4">
+          <h5 class="border-bottom pb-2 mb-3">
+            <i class="bi bi-book me-2"></i>
+            Spécialisations
+            <span class="badge bg-danger ms-2" *ngIf="!enseignant.matiereDominante && !enseignant.matiereSecondaire">
+              Problème de chargement
+            </span>
+          </h5>
+
+          <!-- Matière dominante -->
+          <div class="card mb-3 border-warning" *ngIf="enseignant.matiereDominante">
+            <div class="card-header bg-warning text-dark d-flex align-items-center">
+              <i class="bi bi-star-fill me-2"></i>
+              <strong>Matière dominante</strong>
+              <span class="badge bg-success ms-2" *ngIf="enseignant.matiereDominante.code.startsWith('DOM-PLACEHOLDER')">
+                Placeholder
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="row mb-2">
+                <div class="col-4 fw-bold">Code:</div>
+                <div class="col-8">
+                  <span class="badge" [ngClass]="{
+                    'bg-warning': !enseignant.matiereDominante.code.startsWith('DOM-PLACEHOLDER'),
+                    'bg-secondary': enseignant.matiereDominante.code.startsWith('DOM-PLACEHOLDER')
+                  }">
+                    {{ enseignant.matiereDominante.code }}
+                  </span>
+                </div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-4 fw-bold">Nom:</div>
+                <div class="col-8">
+                  <span *ngIf="enseignant.matiereDominante.nom.includes('Matière à charger'); else nomNormal">
+                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                    {{ enseignant.matiereDominante.nom }}
+                  </span>
+                  <ng-template #nomNormal>
+                    {{ enseignant.matiereDominante.nom }}
+                  </ng-template>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereDominante.cycle" class="row mb-2">
+                <div class="col-4 fw-bold">Cycle:</div>
+                <div class="col-8">
+                  <span class="badge" [ngClass]="getCycleBadgeClass(enseignant.matiereDominante.cycle)">
+                    {{ getCycleDisplayName(enseignant.matiereDominante.cycle) }}
+                  </span>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereDominante.niveauClasse" class="row">
+                <div class="col-4 fw-bold">Niveau:</div>
+                <div class="col-8">
+                  <span class="badge bg-info">{{ enseignant.matiereDominante.niveauClasse }}</span>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereDominante.nom.includes('Matière à charger')" class="row mt-2">
+                <div class="col-12">
+                  <div class="alert alert-warning small py-2 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    ID matière: <code>{{ enseignant.matiereDominante.id }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message si pas de matière dominante -->
+          <div *ngIf="!enseignant.matiereDominante" class="card mb-3 border-warning">
+            <div class="card-header bg-warning text-dark">
+              <i class="bi bi-star-fill me-2"></i>
+              <strong>Matière dominante</strong>
+              <span class="badge bg-danger ms-2">Non définie</span>
+            </div>
+            <div class="card-body text-center text-muted py-3">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Aucune matière dominante définie
+            </div>
+          </div>
+
+          <!-- Matière secondaire -->
+          <div class="card border-secondary" *ngIf="enseignant.matiereSecondaire">
+            <div class="card-header bg-secondary text-white d-flex align-items-center">
+              <i class="bi bi-book me-2"></i>
+              <strong>Matière secondaire</strong>
+              <span class="badge bg-success ms-2" *ngIf="enseignant.matiereSecondaire.code.startsWith('SEC-PLACEHOLDER')">
+                Placeholder
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="row mb-2">
+                <div class="col-4 fw-bold">Code:</div>
+                <div class="col-8">
+                  <span class="badge" [ngClass]="{
+                    'bg-secondary': !enseignant.matiereSecondaire.code.startsWith('SEC-PLACEHOLDER'),
+                    'bg-light text-dark': enseignant.matiereSecondaire.code.startsWith('SEC-PLACEHOLDER')
+                  }">
+                    {{ enseignant.matiereSecondaire.code }}
+                  </span>
+                </div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-4 fw-bold">Nom:</div>
+                <div class="col-8">
+                  <span *ngIf="enseignant.matiereSecondaire.nom.includes('Matière à charger'); else nomNormalSec">
+                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                    {{ enseignant.matiereSecondaire.nom }}
+                  </span>
+                  <ng-template #nomNormalSec>
+                    {{ enseignant.matiereSecondaire.nom }}
+                  </ng-template>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereSecondaire.cycle" class="row mb-2">
+                <div class="col-4 fw-bold">Cycle:</div>
+                <div class="col-8">
+                  <span class="badge" [ngClass]="getCycleBadgeClass(enseignant.matiereSecondaire.cycle)">
+                    {{ getCycleDisplayName(enseignant.matiereSecondaire.cycle) }}
+                  </span>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereSecondaire.niveauClasse" class="row">
+                <div class="col-4 fw-bold">Niveau:</div>
+                <div class="col-8">
+                  <span class="badge bg-info">{{ enseignant.matiereSecondaire.niveauClasse }}</span>
+                </div>
+              </div>
+              <div *ngIf="enseignant.matiereSecondaire.nom.includes('Matière à charger')" class="row mt-2">
+                <div class="col-12">
+                  <div class="alert alert-warning small py-2 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    ID matière: <code>{{ enseignant.matiereSecondaire.id }}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message si pas de matière secondaire -->
+          <div *ngIf="!enseignant.matiereSecondaire" class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+              <i class="bi bi-book me-2"></i>
+              <strong>Matière secondaire</strong>
+              <span class="badge bg-danger ms-2">Non définie</span>
+            </div>
+            <div class="card-body text-center text-muted py-3">
+              <i class="bi bi-info-circle me-2"></i>
+              Aucune matière secondaire définie
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Disponibilité -->
+      <div *ngIf="!isLoading && enseignant" class="row mt-4">
+        <div class="col-12">
+          <div class="card border-info">
+            <div class="card-header bg-info text-white d-flex align-items-center">
+              <i class="bi bi-clock me-2"></i>
+              <strong>Disponibilité hebdomadaire</strong>
+            </div>
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <h5 class="mb-0">{{ enseignant.heuresMaxHebdo }} heures / semaine</h5>
+                  <p class="text-muted mb-0">Maximum d'heures enseignables</p>
+                </div>
+                <div class="col-md-8">
+                  <div class="d-flex align-items-center">
+                    <div class="flex-grow-1 me-3">
+                      <div class="progress" style="height: 20px;">
+                        <div class="progress-bar"
+                             [ngClass]="getProgressBarClass(enseignant.heuresMaxHebdo)"
+                             [style.width.%]="getProgressBarWidth(enseignant.heuresMaxHebdo)"
+                             role="progressbar">
+                          <span class="fw-bold">{{ enseignant.heuresMaxHebdo }}h</span>
+                        </div>
+                      </div>
+                      <div class="d-flex justify-content-between mt-1">
+                        <small>0h</small>
+                        <small>14h</small>
+                        <small>21h</small>
+                        <small>28h</small>
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <span [ngClass]="{
+                        'badge bg-success': enseignant.heuresMaxHebdo <= 14,
+                        'badge bg-warning': enseignant.heuresMaxHebdo > 14 && enseignant.heuresMaxHebdo <= 21,
+                        'badge bg-danger': enseignant.heuresMaxHebdo > 21
+                      }">
+                        {{ enseignant.heuresMaxHebdo <= 14 ? 'Très disponible' :
+                           enseignant.heuresMaxHebdo <= 21 ? 'Disponible' :
+                           'Peu disponible' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEBUG SECTION (IMPORTANTE - À ACTIVER POUR DÉBOGAGE) -->
+      <div *ngIf="!isLoading && enseignant" class="row mt-4">
+        <div class="col-12">
+          <div class="alert alert-warning">
+            <h6 class="alert-heading">
+              <i class="bi bi-bug me-2"></i> Informations de débogage
+            </h6>
+            <p class="mb-2"><strong>État des matières:</strong></p>
+            <ul class="mb-2">
+              <li>Matière dominante existe: <code>{{ !!enseignant.matiereDominante }}</code></li>
+              <li>Matière secondaire existe: <code>{{ !!enseignant.matiereSecondaire }}</code></li>
+              <li *ngIf="enseignant.matiereDominante">Code dominante: <code>{{ enseignant.matiereDominante.code }}</code></li>
+              <li *ngIf="enseignant.matiereSecondaire">Code secondaire: <code>{{ enseignant.matiereSecondaire.code }}</code></li>
+              <li *ngIf="enseignant.matiereDominante">Type dominante: <code>{{ getTypeOf(enseignant.matiereDominante) }}</code></li>
+              <li *ngIf="enseignant.matiereSecondaire">Type secondaire: <code>{{ getTypeOf(enseignant.matiereSecondaire) }}</code></li>
+            </ul>
+            <p class="mb-0"><strong>Données complètes:</strong></p>
+            <pre class="mt-2 mb-0 small bg-dark text-light p-2 rounded">{{ enseignant | json }}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && !enseignant" class="text-center py-5">
+        <div class="text-muted">
+          <i class="bi bi-person-x display-6 d-block mb-2"></i>
+          Enseignant non trouvé
+        </div>
+        <button type="button" class="btn btn-primary mt-2" routerLink="/enseignants">
+          <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,408 @@
+// C:\projets\java\edt-generator\frontend\src\app\components\enseignant-list\enseignant-list.component.scss
+.table {
+  th {
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: middle;
+  }
+
+  td {
+    vertical-align: middle;
+  }
+
+  tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transition: background-color 0.2s;
+  }
+}
+
+.progress {
+  width: 80px;
+  margin: 0 auto;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .progress-bar {
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+}
+
+.btn-group {
+  .btn {
+    border-radius: 4px !important;
+    padding: 0.25rem 0.5rem;
+    transition: all 0.2s;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &.btn-outline-warning:hover {
+      background-color: #ffc107;
+      color: #212529;
+    }
+
+    &.btn-outline-info:hover {
+      background-color: #0dcaf0;
+      color: #fff;
+    }
+
+    &.btn-outline-danger:hover {
+      background-color: #dc3545;
+      color: #fff;
+    }
+  }
+}
+
+.pagination {
+  .page-item {
+    .page-link {
+      border-radius: 4px;
+      margin: 0 2px;
+      border: none;
+      color: #495057;
+      transition: all 0.2s;
+
+      &:hover {
+        background-color: #e9ecef;
+        transform: translateY(-1px);
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+      }
+    }
+
+    &.active .page-link {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
+    }
+
+    &.disabled .page-link {
+      color: #6c757d;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+  }
+}
+
+.input-group-text {
+  border-radius: 6px 0 0 6px;
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+
+/* Style pour les barres de progression */
+.progress {
+  &.bg-success .progress-bar {
+    background-color: #198754;
+  }
+
+  &.bg-warning .progress-bar {
+    background-color: #ffc107;
+  }
+
+  &.bg-danger .progress-bar {
+    background-color: #dc3545;
+  }
+}
+
+/* Style pour les matières */
+.matiere-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 50px;
+
+  .badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+.matiere-code {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.matiere-nom {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extra-small {
+  font-size: 0.7rem;
+  margin-top: 2px;
+}
+
+/* Animation de chargement */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+  animation: spin 0.75s linear infinite;
+}
+
+/* Style pour les en-têtes de colonnes triables */
+th[style*="cursor: pointer"] {
+  position: relative;
+  user-select: none;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .bi {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+
+  &:hover .bi {
+    opacity: 1;
+  }
+}
+
+/* Style pour le bouton d'ajout */
+.btn-light {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Style pour les badges de cycle */
+.badge {
+  &.bg-primary { background-color: #0d6efd !important; }
+  &.bg-success { background-color: #198754 !important; }
+  &.bg-info { background-color: #0dcaf0 !important; }
+  &.bg-warning { background-color: #ffc107 !important; color: #212529; }
+  &.bg-danger { background-color: #dc3545 !important; }
+  &.bg-secondary { background-color: #6c757d !important; }
+}
+
+/* Style pour le card-footer de pagination */
+.card-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+
+  > div {
+    gap: 15px;
+  }
+}
+
+/* Style pour le modal de confirmation */
+app-confirmation-modal {
+  display: block;
+  z-index: 1050;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .table-responsive {
+    font-size: 0.85rem;
+    margin: 0 -1rem;
+    width: calc(100% + 2rem);
+
+    .table {
+      margin-bottom: 0;
+    }
+  }
+
+  .btn-group-sm {
+    flex-wrap: nowrap;
+
+    .btn {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+
+    .page-link {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .card-footer > div {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    align-items: center;
+
+    .input-group {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+  .matiere-item {
+    flex-direction: column;
+    gap: 4px;
+    min-height: auto;
+
+    .badge {
+      width: 20px;
+      height: 20px;
+      font-size: 0.6rem;
+    }
+
+    .matiere-code {
+      font-size: 0.8rem;
+    }
+
+    .matiere-nom {
+      font-size: 0.75rem;
+    }
+
+    .extra-small {
+      font-size: 0.65rem;
+    }
+  }
+
+  .progress {
+    width: 60px;
+    height: 8px;
+  }
+}
+
+/* Animation pour les lignes du tableau */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+tbody tr {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Style pour les états vides */
+.text-muted {
+  .display-6 {
+    color: #dee2e6;
+  }
+
+  .btn-primary {
+    margin-top: 1rem;
+  }
+}
+
+/* Amélioration de l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .page-link,
+  .progress-bar,
+  tbody tr {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Dark mode support (optionnel) */
+@media (prefers-color-scheme: dark) {
+  .table {
+    th {
+      background-color: #343a40;
+      color: #f8f9fa;
+      border-color: #495057;
+    }
+
+    td {
+      background-color: #212529;
+      color: #f8f9fa;
+      border-color: #495057;
+    }
+
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .card {
+    background-color: #212529;
+    color: #f8f9fa;
+  }
+
+  .card-header {
+    background-color: #343a40 !important;
+  }
+
+  .card-footer {
+    background-color: #343a40;
+    border-color: #495057;
+  }
+
+  .input-group-text {
+    background-color: #495057;
+    border-color: #6c757d;
+    color: #f8f9fa;
+  }
+
+  .form-control {
+    background-color: #343a40;
+    border-color: #6c757d;
+    color: #f8f9fa;
+
+    &::placeholder {
+      color: #adb5bd;
+    }
+  }
+
+  .form-select {
+    background-color: #343a40;
+    border-color: #6c757d;
+    color: #f8f9fa;
+  }
+
+  .text-muted {
+    color: #adb5bd !important;
+  }
+}
