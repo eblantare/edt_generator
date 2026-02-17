@@ -7,3 +7,30 @@ body {
   padding-top: 20px;
   background-color: #f8f9fa;
 }
+
+/* C:\projets\java\edt-generator\frontend\src\styles.css */
+
+/* Style pour le footer */
+.footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  color: #6c757d;
+  text-align: center;
+  padding: 15px 0;
+  margin-top: 30px;
+  font-size: 14px;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+/* Pour que le footer reste en bas même avec peu de contenu */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+.main-content {
+  min-height: calc(100vh - 150px); /* Ajuste selon la hauteur de ton header + footer */
+  padding-bottom: 20px;
+}

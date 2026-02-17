@@ -1,7 +1,7 @@
 // C:\projets\java\edt-generator\frontend\src\app\components\visualisation\visualisation.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { GenerationService } from '../../services/generation.service';
 import { NotificationService } from '../../services/notification.service';
@@ -9,149 +9,226 @@ import { NotificationService } from '../../services/notification.service';
 @Component({
   selector: 'app-visualisation',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, RouterLink],
   template: `
     <div class="container mt-4">
-      <div class="card">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-          <h3 class="mb-0">
-            <i class="bi bi-calendar3 me-2"></i>{{ emploi?.nom || 'Visualisation' }}
-          </h3>
-          <div class="btn-group">
-            <button class="btn btn-light btn-sm" (click)="exporterPDF()">
-              <i class="bi bi-file-pdf me-1"></i>PDF
-            </button>
-            <button class="btn btn-light btn-sm" (click)="exporterExcel()">
-              <i class="bi bi-file-excel me-1"></i>Excel
-            </button>
-            <button class="btn btn-light btn-sm" (click)="imprimer()">
-              <i class="bi bi-printer me-1"></i>Imprimer
-            </button>
-            <button class="btn btn-light btn-sm" (click)="retour()">
-              <i class="bi bi-arrow-left me-1"></i>Retour
-            </button>
+      <!-- Carte principale avec en-tête professionnel -->
+      <div class="card shadow-lg border-0 rounded-4">
+        <!-- En-tête avec dégradé -->
+        <div class="card-header bg-gradient-primary text-white py-3 rounded-top-4"
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h3 class="mb-0 fw-bold">
+                <i class="bi bi-calendar-week me-2"></i>{{ emploi?.nom || 'Emploi du temps' }}
+              </h3>
+              <p class="mb-0 mt-1 opacity-75 small">
+                <i class="bi bi-clock me-1"></i> Généré le {{ formatDate(emploi?.dateGeneration) }}
+              </p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-light btn-sm rounded-pill px-3 mx-1" (click)="exporterPDFMatriciel()">
+                <i class="bi bi-file-pdf text-danger me-1"></i>PDF
+              </button>
+              <button class="btn btn-light btn-sm rounded-pill px-3 mx-1" (click)="exporterExcel()">
+                <i class="bi bi-file-excel text-success me-1"></i>Excel
+              </button>
+              <button class="btn btn-light btn-sm rounded-pill px-3 mx-1" (click)="imprimer()">
+                <i class="bi bi-printer text-primary me-1"></i>Imprimer
+              </button>
+              <button class="btn btn-light btn-sm rounded-pill px-3 mx-1" routerLink="/generation">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="card-body">
-          <!-- Informations générales -->
-          <div class="row mb-4">
-            <div class="col-md-3">
-              <div class="card bg-light">
-                <div class="card-body">
-                  <h6 class="card-title">Année scolaire</h6>
-                  <p class="card-text">{{ emploi?.anneeScolaire || 'Non spécifié' }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="card bg-light">
-                <div class="card-body">
-                  <h6 class="card-title">Date génération</h6>
-                  <p class="card-text">{{ formatDate(emploi?.dateGeneration) }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="card bg-light">
-                <div class="card-body">
-                  <h6 class="card-title">Statut</h6>
-                  <span class="badge" [ngClass]="getStatutClass(emploi?.statut)">
-                    {{ emploi?.statut || 'INCONNU' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="card bg-light">
-                <div class="card-body">
-                  <h6 class="card-title">Type</h6>
-                  <span class="badge" [ngClass]="getTypeClass(emploi?.type || detecterType(emploi?.nom))">
-                    {{ emploi?.type || detecterType(emploi?.nom) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tableau des créneaux -->
-          <div *ngIf="creneaux.length > 0" class="table-responsive">
-            <h5 class="mb-3">Créneaux horaires</h5>
-            <table class="table table-bordered table-hover">
-              <thead class="table-dark">
-                <tr>
-                  <th>Jour</th>
-                  <th>Heure début</th>
-                  <th>Heure fin</th>
-                  <th>Classe</th>
-                  <th>Matière</th>
-                  <th>Enseignant</th>
-                  <th>Salle</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let creneau of creneaux">
-                  <td>{{ creneau.jourSemaine }}</td>
-                  <td>{{ creneau.heureDebut }}</td>
-                  <td>{{ creneau.heureFin }}</td>
-                  <td>{{ creneau.classeNom || 'Non spécifié' }}</td>
-                  <td>{{ creneau.matiereNom || 'Non spécifié' }}</td>
-                  <td>{{ creneau.enseignantNom || 'Non spécifié' }}</td>
-                  <td>{{ creneau.salle || 'Non attribuée' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div *ngIf="creneaux.length === 0" class="alert alert-warning">
-            Aucun créneau trouvé pour cet emploi du temps.
-            <button class="btn btn-sm btn-outline-primary ms-2" (click)="chargerCreneaux()">
-              <i class="bi bi-arrow-clockwise"></i> Réessayer
-            </button>
-          </div>
-
-          <!-- Statistiques -->
-          <div *ngIf="creneaux.length > 0" class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <h5 class="mb-0">Statistiques</h5>
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-3">
-                      <div class="card bg-info text-white">
-                        <div class="card-body text-center">
-                          <h6 class="card-title">Total créneaux</h6>
-                          <p class="card-text display-6">{{ creneaux.length }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="card bg-success text-white">
-                        <div class="card-body text-center">
-                          <h6 class="card-title">Créneaux occupés</h6>
-                          <p class="card-text display-6">{{ getCreneauxOccupes() }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="card bg-warning text-white">
-                        <div class="card-body text-center">
-                          <h6 class="card-title">Jours utilisés</h6>
-                          <p class="card-text display-6">{{ getJoursUniques() }}</p>
-                        </div>
-                      </div>
-                    </div>
+        <div class="card-body p-4">
+          <!-- Cartes d'information en haut -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 bg-light rounded-4 h-100">
+                <div class="card-body d-flex align-items-center">
+                  <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-calendar3 text-primary fs-4"></i>
+                  </div>
+                  <div>
+                    <small class="text-muted text-uppercase fw-bold">Année scolaire</small>
+                    <h5 class="mb-0 fw-bold">{{ emploi?.anneeScolaire || 'Non spécifiée' }}</h5>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 bg-light rounded-4 h-100">
+                <div class="card-body d-flex align-items-center">
+                  <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-tag text-success fs-4"></i>
+                  </div>
+                  <div>
+                    <small class="text-muted text-uppercase fw-bold">Type</small>
+                    <h5 class="mb-0">
+                      <span class="badge rounded-pill" [ngClass]="getTypeClass(emploi?.type || detecterType(emploi?.nom))">
+                        {{ emploi?.type || detecterType(emploi?.nom) }}
+                      </span>
+                    </h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 bg-light rounded-4 h-100">
+                <div class="card-body d-flex align-items-center">
+                  <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-bar-chart text-warning fs-4"></i>
+                  </div>
+                  <div>
+                    <small class="text-muted text-uppercase fw-bold">Statut</small>
+                    <h5 class="mb-0">
+                      <span class="badge rounded-pill" [ngClass]="getStatutClass(emploi?.statut)">
+                        {{ emploi?.statut || 'INCONNU' }}
+                      </span>
+                    </h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 bg-light rounded-4 h-100">
+                <div class="card-body d-flex align-items-center">
+                  <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-people text-info fs-4"></i>
+                  </div>
+                  <div>
+                    <small class="text-muted text-uppercase fw-bold">Classe</small>
+                    <h5 class="mb-0 fw-bold">{{ getClassePrincipale() }}</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone de statistiques -->
+          <div class="row g-3 mb-4" *ngIf="creneauxOccupes.length > 0">
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 text-white rounded-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-center py-3">
+                  <h2 class="fw-bold mb-0">{{ creneauxOccupes.length }}</h2>
+                  <small>Cours programmés</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 text-white rounded-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body text-center py-3">
+                  <h2 class="fw-bold mb-0">{{ getMatieresUniques() }}</h2>
+                  <small>Matières distinctes</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 text-white rounded-4" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body text-center py-3">
+                  <h2 class="fw-bold mb-0">{{ getEnseignantsUniques() }}</h2>
+                  <small>Enseignants</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+              <div class="card border-0 text-white rounded-4" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="card-body text-center py-3">
+                  <h2 class="fw-bold mb-0">{{ getJoursUniques() }}/5</h2>
+                  <small>Jours utilisés</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau des créneaux - UNIQUEMENT LES COURS RÉELS -->
+          <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 rounded-top-4 border-0">
+              <h5 class="mb-0 fw-bold">
+                <i class="bi bi-table me-2 text-primary"></i>
+                Détail des cours
+                <span class="badge bg-primary bg-opacity-10 text-primary ms-2">{{ creneauxOccupes.length }} cours</span>
+              </h5>
+            </div>
+
+            <div class="card-body p-0">
+              <div *ngIf="creneauxOccupes.length === 0" class="text-center py-5">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                <h5 class="mt-3 text-muted">Aucun cours programmé</h5>
+                <button class="btn btn-outline-primary mt-3 rounded-pill px-4" (click)="chargerCreneaux()">
+                  <i class="bi bi-arrow-clockwise me-2"></i>Réessayer
+                </button>
+              </div>
+
+              <div *ngIf="creneauxOccupes.length > 0" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="bg-light">
+                    <tr>
+                      <th class="border-0 rounded-start ps-4">Jour</th>
+                      <th class="border-0">Horaire</th>
+                      <th class="border-0">Classe</th>
+                      <th class="border-0">Matière</th>
+                      <th class="border-0 rounded-end pe-4">Enseignant</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let creneau of creneauxOccupes" class="border-bottom">
+                      <td class="ps-4">
+                        <span class="fw-semibold">{{ creneau.jourSemaine }}</span>
+                      </td>
+                      <td>
+                        <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                          {{ creneau.heureDebut }} - {{ creneau.heureFin }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="fw-semibold">{{ creneau.classeNom || 'Non spécifiée' }}</span>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                          {{ creneau.matiereNom }}
+                        </span>
+                      </td>
+                      <td class="pe-4">
+                        <div class="d-flex align-items-center">
+                          <div class="rounded-circle bg-secondary bg-opacity-10 p-2 me-2">
+                            <i class="bi bi-person text-secondary small"></i>
+                          </div>
+                          <span>{{ creneau.enseignantNom }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .bg-gradient-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .bg-light-success {
+      background-color: rgba(40, 167, 69, 0.05);
+    }
+    .rounded-4 {
+      border-radius: 1rem !important;
+    }
+    .rounded-top-4 {
+      border-top-left-radius: 1rem !important;
+      border-top-right-radius: 1rem !important;
+    }
+    .rounded-bottom-4 {
+      border-bottom-left-radius: 1rem !important;
+      border-bottom-right-radius: 1rem !important;
+    }
+  `]
 })
 export class VisualisationComponent implements OnInit {
   emploiId: string = '';
@@ -166,13 +243,18 @@ export class VisualisationComponent implements OnInit {
 
   ngOnInit() {
     this.emploiId = this.route.snapshot.paramMap.get('id') || '';
-    
+
     if (this.emploiId) {
       this.chargerEmploiDuTemps();
       this.chargerCreneaux();
     } else {
       this.notificationService.showError('ID d\'emploi du temps manquant');
     }
+  }
+
+  // Propriété calculée : uniquement les créneaux occupés
+  get creneauxOccupes(): any[] {
+    return this.creneaux.filter(c => !c.estLibre);
   }
 
   chargerEmploiDuTemps() {
@@ -199,13 +281,18 @@ export class VisualisationComponent implements OnInit {
     });
   }
 
-  exporterPDF() {
-    this.generationService.exporterPDF(this.emploiId).subscribe({
+  exporterPDFMatriciel() {
+    if (!this.emploi) return;
+
+    // Extraire le nom de la classe
+    let classeNom = this.getClassePrincipale();
+
+    this.generationService.exporterPDFMatriciel(this.emploiId, classeNom).subscribe({
       next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${this.emploi?.nom || 'emploi'}_${new Date().toISOString().split('T')[0]}.pdf`;
+        a.download = `EDT_${classeNom}_${new Date().toISOString().split('T')[0]}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -243,10 +330,6 @@ export class VisualisationComponent implements OnInit {
     window.print();
   }
 
-  retour() {
-    window.history.back();
-  }
-
   // === MÉTHODES UTILITAIRES ===
   detecterType(nom: string): string {
     if (!nom) return 'Global';
@@ -257,12 +340,32 @@ export class VisualisationComponent implements OnInit {
     return 'Global';
   }
 
-  getCreneauxOccupes(): number {
-    return this.creneaux.filter(c => !c.estLibre).length;
+  getClassePrincipale(): string {
+    if (this.emploi?.classeNom) {
+      return this.emploi.classeNom;
+    }
+
+    // Sinon, chercher dans les créneaux
+    for (let c of this.creneauxOccupes) {
+      if (c.classeNom) {
+        return c.classeNom;
+      }
+    }
+    return 'Non spécifiée';
+  }
+
+  getMatieresUniques(): number {
+    const matieres = new Set(this.creneauxOccupes.map(c => c.matiereNom).filter(Boolean));
+    return matieres.size;
+  }
+
+  getEnseignantsUniques(): number {
+    const enseignants = new Set(this.creneauxOccupes.map(c => c.enseignantNom).filter(Boolean));
+    return enseignants.size;
   }
 
   getJoursUniques(): number {
-    const jours = new Set(this.creneaux.map(c => c.jourSemaine));
+    const jours = new Set(this.creneauxOccupes.map(c => c.jourSemaine));
     return jours.size;
   }
 
@@ -281,7 +384,7 @@ export class VisualisationComponent implements OnInit {
     if (statutLower.includes('termine') || statutLower.includes('terminé') || statutLower.includes('succès')) {
       return 'bg-success';
     } else if (statutLower.includes('cours') || statutLower.includes('en cours')) {
-      return 'bg-warning';
+      return 'bg-warning text-dark';
     } else if (statutLower.includes('erreur') || statutLower.includes('échec')) {
       return 'bg-danger';
     } else {
