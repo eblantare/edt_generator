@@ -39,4 +39,4 @@ npm run dev
 
 ## 👨‍💻 Auteur
 
-Projet développé par [Ton Nom]
+Projet développé par Komla BLANTARE
