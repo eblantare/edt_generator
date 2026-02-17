@@ -1,0 +1,18 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "attr-case": ["error", "lowercase"],
+    "element-case": ["error", "lowercase"],
+    "void-style": ["error", "selfclosing"],
+    "no-trailing-whitespace": "error",
+    "no-dup-attr": "error"
+  },
+  "overrides": [
+    {
+      "files": ["*.component.html"],
+      "rules": {
+        "attr-case": "off"  
+      }
+    }
+  ]
+}
