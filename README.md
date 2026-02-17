@@ -2,6 +2,11 @@
 
 Application web de génération automatique d’emplois du temps.
 
+![Java](https://img.shields.io/badge/Java-17-blue)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-3-green)
+![React](https://img.shields.io/badge/React-Frontend-blue)
+![License](https://img.shields.io/badge/license-MIT-orange)
+
 ## 🚀 Stack technique
 
 Backend:
