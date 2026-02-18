@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Service pour la base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: edt-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: edt_db
+      POSTGRES_USER: edt_user
+      POSTGRES_PASSWORD: edt_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - edt-network
+
+  # Service pour le backend Spring Boot
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: edt-backend
+    restart: always
+    environment:
+      # Ces variables doivent correspondre à votre application.properties
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/edt_db
+      SPRING_DATASOURCE_USERNAME: edt_user
+      SPRING_DATASOURCE_PASSWORD: edt_password
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - edt-network
+
+  # Service pour le frontend Angular (servi par Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: edt-frontend
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - edt-network
+
+# Définition du volume pour la persistance des données de la BDD
+volumes:
+  postgres_data:
+
+# Définition du réseau pour la communication entre services
+networks:
+  edt-network:
+    driver: bridge

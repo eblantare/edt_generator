@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: edt-backend
+    runtime: java
+    repo: https://github.com/eblantare/edt_generator
+    buildCommand: cd backend && mvn clean package
+    startCommand: java -jar backend/target/edt-generator-1.0.0.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: PORT
+        value: 8080
