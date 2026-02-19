@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Matiere } from '../models/enseignant.model';
-
+import { environment } from '../../environments/environment';
 export interface MatiereListResponse {
   content: Matiere[];
   totalElements: number;
@@ -16,7 +16,7 @@ export interface MatiereListResponse {
   providedIn: 'root'
 })
 export class MatiereService {
-  private apiUrl = 'http://localhost:8080/api/matieres';
+  private apiUrl = `${environment.apiUrl}/matieres`;
 
   constructor(private http: HttpClient) { }
 

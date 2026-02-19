@@ -5,12 +5,12 @@ import { Observable, throwError, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { Enseignant, EnseignantListResponse, Matiere, EnseignantBackendData } from '../models/enseignant.model';
 import { MatiereService } from './matiere.service';
-
+import { environment } from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class EnseignantService {
-  private apiUrl = 'http://localhost:8080/api/enseignants';
+ private apiUrl = `${environment.apiUrl}/enseignants`;
 
   constructor(
     private http: HttpClient,
@@ -31,7 +31,7 @@ export class EnseignantService {
             matiereSecondaire: firstEnseignant.matiereSecondaire,
             matiereSecondaireType: typeof firstEnseignant.matiereSecondaire
           });
-          
+
           // Vérifier si c'est un objet ou une chaîne
           if (firstEnseignant.matiereDominante) {
             console.log('🔎 Détails matière dominante:', {
@@ -71,14 +71,14 @@ export class EnseignantService {
       .pipe(
         switchMap(response => {
           console.log('📦 Réponse brute du backend (liste):', response);
-          
+
           if (response.content && response.content.length > 0) {
             // Charger toutes les matières pour pouvoir les mapper
             return this.matiereService.getAllMatieres().pipe(
               map(allMatieres => {
                 console.log('📚 Toutes les matières chargées:', allMatieres.length);
                 console.log('🔍 Premières matières:', allMatieres.slice(0, 3));
-                
+
                 // TEST : Vérifier le mapping pour le premier enseignant
                 if (response.content.length > 0 && allMatieres.length > 0) {
                   const testEnseignant = response.content[0];
@@ -90,12 +90,12 @@ export class EnseignantService {
                     trouveSecondaire: allMatieres.find(m => m.id === testEnseignant.matiereSecondaire)
                   });
                 }
-                
+
                 // Convertir chaque enseignant brut en enseignant enrichi
-                const enseignantsEnrichis = response.content.map(enseignantData => 
+                const enseignantsEnrichis = response.content.map(enseignantData =>
                   this.mapBackendToFrontend(enseignantData, allMatieres)
                 );
-                
+
                 return {
                   ...response,
                   content: enseignantsEnrichis
@@ -111,12 +111,12 @@ export class EnseignantService {
 
   getEnseignant(id: string): Observable<Enseignant> {
     console.log('🟡 getEnseignant appelé pour ID:', id);
-    
+
     return this.http.get<EnseignantBackendData>(`${this.apiUrl}/${id}`)
       .pipe(
         switchMap(enseignantData => {
           console.log('📦 Enseignant brut du backend (détail):', enseignantData);
-          
+
           // Charger toutes les matières pour le mapping
           return this.matiereService.getAllMatieres().pipe(
             map(allMatieres => {
@@ -156,7 +156,7 @@ export class EnseignantService {
     };
 
     // STRATÉGIE DE RECHERCHE : Essayer toutes les possibilités
-    
+
     // 1. Traitement de la matière dominante
     if (enseignantData.matiereDominante) {
       // Cas 1 : C'est déjà un objet complet
@@ -180,7 +180,7 @@ export class EnseignantService {
       else if (typeof enseignantData.matiereDominante === 'string') {
         const matiereId = enseignantData.matiereDominante;
         console.log('🔍 Recherche matière dominante par ID:', matiereId);
-        
+
         const matiereTrouvee = allMatieres.find(m => m.id === matiereId);
         if (matiereTrouvee) {
           enseignant.matiereDominante = matiereTrouvee;
@@ -223,7 +223,7 @@ export class EnseignantService {
       else if (typeof enseignantData.matiereSecondaire === 'string') {
         const matiereId = enseignantData.matiereSecondaire;
         console.log('🔍 Recherche matière secondaire par ID:', matiereId);
-        
+
         const matiereTrouvee = allMatieres.find(m => m.id === matiereId);
         if (matiereTrouvee) {
           enseignant.matiereSecondaire = matiereTrouvee;
@@ -281,7 +281,7 @@ export class EnseignantService {
   }
 
   console.log('📤 Données envoyées au backend:', backendData);
-  
+
   return this.http.post<Enseignant>(this.apiUrl, backendData)
     .pipe(
       catchError(this.handleError)
@@ -312,7 +312,7 @@ export class EnseignantService {
   }
 
   console.log('📤 Données de mise à jour:', backendData);
-  
+
   return this.http.put<Enseignant>(`${this.apiUrl}/${id}`, backendData)
     .pipe(
       catchError(this.handleError)
@@ -328,7 +328,7 @@ export class EnseignantService {
 
   getCycleDisplayName(cycleCode: string): string {
     if (!cycleCode) return 'Non spécifié';
-    
+
     const cycleMap: {[key: string]: string} = {
       'college': 'Collège',
       'lycee': 'Lycée Général',
@@ -339,13 +339,13 @@ export class EnseignantService {
       'secundaria': 'Secondaire',
       'superior': 'Supérieur'
     };
-    
+
     return cycleMap[cycleCode.toLowerCase()] || cycleCode;
   }
 
   getCycleBadgeClass(cycleCode: string): string {
     if (!cycleCode) return 'bg-secondary';
-    
+
     const cycleClassMap: {[key: string]: string} = {
       'college': 'bg-primary',
       'lycee': 'bg-success',
@@ -356,15 +356,15 @@ export class EnseignantService {
       'secundaria': 'bg-success',
       'superior': 'bg-info'
     };
-    
+
     return cycleClassMap[cycleCode.toLowerCase()] || 'bg-secondary';
   }
 
   private handleError(error: HttpErrorResponse) {
     let errorMessage = 'Une erreur est survenue';
-    
+
     console.error('❌ Erreur:', error);
-    
+
     if (error.error instanceof ErrorEvent) {
       errorMessage = `Erreur client: ${error.error.message}`;
     } else {
@@ -388,7 +388,7 @@ export class EnseignantService {
           errorMessage = `Erreur ${error.status}: ${error.message}`;
       }
     }
-    
+
     return throwError(() => new Error(errorMessage));
   }
 }
