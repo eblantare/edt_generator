@@ -1,61 +1,130 @@
 // C:\projets\java\edt-generator\frontend\src\app\app.routes.ts
 import { Routes } from '@angular/router';
-import { EnseignantListComponent } from './components/enseignant-list/enseignant-list.component';
-import { EnseignantFormComponent } from './components/enseignant-form/enseignant-form.component';
-import { EnseignantDetailComponent } from './components/enseignant-detail/enseignant-detail.component';
-import { MatiereListComponent } from './components/matiere-list/matiere-list.component';
-import { MatiereFormComponent } from './components/matiere-form/matiere-form.component';
-import { MatiereDetailsComponent } from './components/matiere-details/matiere-details.component';
-import { ClasseListComponent } from './components/classe-list/classe-list.component';
-import { ClasseFormComponent } from './components/classe-form/classe-form.component';
-import { ClasseDetailsComponent } from './components/classe-details/classe-details.component';
-import { EnseignementListComponent } from './components/enseignement/enseignement-list.component';
-import { EnseignementFormComponent } from './components/enseignement/enseignement-form.component';
-import { GenerationComponent } from './components/generation/generation.component';
-import { VisualisationComponent } from './components/visualisation/visualisation.component';  // AJOUTEZ CETTE LIGNE
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/generation', pathMatch: 'full' },  // Redirige vers /generation
+  // Page de connexion (publique)
+  {
+    path: 'connexion',
+    loadComponent: () => import('./components/connexion/connexion.component')
+      .then(m => m.ConnexionComponent)
+  },
 
-  // Enseignants
-  { path: 'enseignants', component: EnseignantListComponent },
-  { path: 'enseignants/new', component: EnseignantFormComponent },
-  { path: 'enseignants/edit/:id', component: EnseignantFormComponent },
-  { path: 'enseignants/:id', component: EnseignantDetailComponent },
+  // Enseignants (protégé)
+  {
+    path: 'enseignants',
+    loadComponent: () => import('./components/enseignant-list/enseignant-list.component')
+      .then(m => m.EnseignantListComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'enseignants/new',
+    loadComponent: () => import('./components/enseignant-form/enseignant-form.component')
+      .then(m => m.EnseignantFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'enseignants/edit/:id',
+    loadComponent: () => import('./components/enseignant-form/enseignant-form.component')
+      .then(m => m.EnseignantFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'enseignants/:id',
+    loadComponent: () => import('./components/enseignant-detail/enseignant-detail.component')
+      .then(m => m.EnseignantDetailComponent),
+    canActivate: [AuthGuard]
+  },
 
-  // Enseignements
-  { path: 'enseignements', component: EnseignementListComponent },
-  { path: 'enseignements/new', component: EnseignementFormComponent },
-  { path: 'enseignements/edit/:id', component: EnseignementFormComponent },
+  // Enseignements (protégé)
+  {
+    path: 'enseignements',
+    loadComponent: () => import('./components/enseignement/enseignement-list.component')
+      .then(m => m.EnseignementListComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'enseignements/new',
+    loadComponent: () => import('./components/enseignement/enseignement-form.component')
+      .then(m => m.EnseignementFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'enseignements/edit/:id',
+    loadComponent: () => import('./components/enseignement/enseignement-form.component')
+      .then(m => m.EnseignementFormComponent),
+    canActivate: [AuthGuard]
+  },
 
-  // Génération
-  { path: 'generation', component: GenerationComponent },
+  // Génération (protégé)
+  {
+    path: 'generation',
+    loadComponent: () => import('./components/generation/generation.component')
+      .then(m => m.GenerationComponent),
+    canActivate: [AuthGuard]
+  },
 
-  // Visualisation des emplois du temps
-  { path: 'visualisation/:id', component: VisualisationComponent },  // AJOUTEZ CETTE LIGNE
+  // Visualisation (protégé)
+  {
+    path: 'visualisation/:id',
+    loadComponent: () => import('./components/visualisation/visualisation.component')
+      .then(m => m.VisualisationComponent),
+    canActivate: [AuthGuard]
+  },
 
-  // Matières
+  // Matières (protégé)
   {
     path: 'matieres',
-    children: [
-      { path: '', component: MatiereListComponent },
-      { path: 'new', component: MatiereFormComponent },
-      { path: 'edit/:id', component: MatiereFormComponent },
-      { path: ':id', component: MatiereDetailsComponent }
-    ]
+    loadComponent: () => import('./components/matiere-list/matiere-list.component')
+      .then(m => m.MatiereListComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'matieres/new',
+    loadComponent: () => import('./components/matiere-form/matiere-form.component')
+      .then(m => m.MatiereFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'matieres/edit/:id',
+    loadComponent: () => import('./components/matiere-form/matiere-form.component')
+      .then(m => m.MatiereFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'matieres/:id',
+    loadComponent: () => import('./components/matiere-details/matiere-details.component')
+      .then(m => m.MatiereDetailsComponent),
+    canActivate: [AuthGuard]
   },
 
-  // Classes
+  // Classes (protégé)
   {
     path: 'classes',
-    children: [
-      { path: '', component: ClasseListComponent },
-      { path: 'new', component: ClasseFormComponent },
-      { path: 'edit/:id', component: ClasseFormComponent },
-      { path: ':id', component: ClasseDetailsComponent }
-    ]
+    loadComponent: () => import('./components/classe-list/classe-list.component')
+      .then(m => m.ClasseListComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'classes/new',
+    loadComponent: () => import('./components/classe-form/classe-form.component')
+      .then(m => m.ClasseFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'classes/edit/:id',
+    loadComponent: () => import('./components/classe-form/classe-form.component')
+      .then(m => m.ClasseFormComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'classes/:id',
+    loadComponent: () => import('./components/classe-details/classe-details.component')
+      .then(m => m.ClasseDetailsComponent),
+    canActivate: [AuthGuard]
   },
 
-  // Fallback
-  { path: '**', redirectTo: '/generation' }
+  // Redirections
+  { path: '', redirectTo: '/connexion', pathMatch: 'full' },
+  { path: '**', redirectTo: '/connexion' }
 ];

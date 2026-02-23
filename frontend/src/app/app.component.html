@@ -1,41 +1,67 @@
 <!-- C:\projets\java\edt-generator\frontend\src\app\app.component.html -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark" *ngIf="estConnecte">
   <div class="container">
-    <a class="navbar-brand" routerLink="/">EDT Generator</a>
+    <a class="navbar-brand" routerLink="/">
+      <i class="bi bi-calendar-week me-2"></i>EDT Generator
+    </a>
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <!-- Enseignants -->
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/enseignants" routerLinkActive="active">
-            <i class="bi bi-people me-1"></i> Enseignants
-          </a>
-        </li>
-        <!-- Matières -->
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/matieres" routerLinkActive="active">
-            <i class="bi bi-book me-1"></i> Matières
-          </a>
-        </li>
+      <ul class="navbar-nav me-auto">
         <!-- Classes -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/classes" routerLinkActive="active">
             <i class="bi bi-mortarboard me-1"></i> Classes
           </a>
         </li>
-        <!-- Enseignements (NOUVEAU) -->
+
+        <!-- Matières -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/matieres" routerLinkActive="active">
+            <i class="bi bi-book me-1"></i> Matières
+          </a>
+        </li>
+
+        <!-- Enseignants -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/enseignants" routerLinkActive="active">
+            <i class="bi bi-people me-1"></i> Enseignants
+          </a>
+        </li>
+
+        <!-- Enseignements -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/enseignements" routerLinkActive="active">
             <i class="bi bi-link-45deg me-1"></i> Attributions
           </a>
         </li>
+
         <!-- Génération -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/generation" routerLinkActive="active">
             <i class="bi bi-calendar-week me-1"></i> Génération
           </a>
+        </li>
+      </ul>
+
+      <!-- Informations utilisateur -->
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ getEmailUtilisateur() }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li>
+              <a class="dropdown-item text-danger" href="#" (click)="deconnexion($event)">
+                <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+              </a>
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
@@ -50,7 +76,7 @@
 </div>
 
 <!-- Footer avec copyright -->
-<footer class="footer">
+<footer class="footer" *ngIf="estConnecte">
   <div class="container">
     <p>&copy; 2026-Blt. Tous droits réservés.</p>
   </div>

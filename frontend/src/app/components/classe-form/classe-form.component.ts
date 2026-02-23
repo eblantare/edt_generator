@@ -24,6 +24,10 @@ export class ClasseFormComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  // CONSTANTES
+  readonly EFFECTIF_MIN = 1;  // Uniquement le minimum, PAS de maximum
+  readonly NOM_MAX_LENGTH = 50;
+
   niveauxOptions = ['6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'];
   filieresOptions = ['Générale', 'Technologique', 'Professionnelle'];
 
@@ -36,11 +40,17 @@ export class ClasseFormComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {
     console.log('🔨 ClasseFormComponent - Constructeur appelé');
+    
+    // Validation: UNIQUEMENT required et min, PAS de max
     this.classeForm = this.fb.group({
-      nom: ['', [Validators.required, Validators.maxLength(50)]],
+      nom: ['', [Validators.required, Validators.maxLength(this.NOM_MAX_LENGTH)]],
       niveau: ['6ème', Validators.required],
       filiere: ['Générale', Validators.required],
-      effectif: [30, [Validators.required, Validators.min(1), Validators.max(50)]]
+      effectif: [30, [
+        Validators.required, 
+        Validators.min(this.EFFECTIF_MIN)
+        // SUPPRESSION DE LA LIMITE MAXIMUM
+      ]]
     });
   }
 
@@ -194,6 +204,7 @@ export class ClasseFormComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Getters
   get nom() { return this.classeForm.get('nom'); }
   get niveau() { return this.classeForm.get('niveau'); }
   get filiere() { return this.classeForm.get('filiere'); }

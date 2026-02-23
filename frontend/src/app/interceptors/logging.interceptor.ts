@@ -6,7 +6,7 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
   console.log('🌐 Requête HTTP:', req.method, req.url);
   console.log('📦 Body:', req.body);
   console.log('🔍 Params:', req.params.toString());
-  
+
   return next(req).pipe(
     tap({
       next: (event) => {

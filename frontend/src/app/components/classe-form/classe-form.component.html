@@ -86,20 +86,20 @@
               </div>
             </div>
 
-            <!-- Effectif -->
+            <!-- Effectif - SANS LIMITE (uniquement minimum 1) -->
             <div class="col-md-6 mb-3">
               <label for="effectif" class="form-label">
                 <i class="bi bi-people me-1"></i> Effectif *
               </label>
               <input type="number" class="form-control" id="effectif" formControlName="effectif"
-                     min="1" max="50"
+                     min="1" step="1"
                      [class.is-invalid]="effectif?.invalid && (effectif?.dirty || effectif?.touched)">
               <div class="invalid-feedback" *ngIf="effectif?.invalid && (effectif?.dirty || effectif?.touched)">
                 <span *ngIf="effectif?.errors?.['required']">L'effectif est obligatoire</span>
                 <span *ngIf="effectif?.errors?.['min']">Minimum 1 élève</span>
-                <span *ngIf="effectif?.errors?.['max']">Maximum 50 élèves</span>
+                <span *ngIf="effectif?.errors?.['pattern']">Veuillez entrer un nombre valide</span>
               </div>
-              <div class="form-text">Nombre d'élèves dans la classe</div>
+              <div class="form-text">Nombre d'élèves dans la classe (sans limite maximum)</div>
             </div>
           </div>
 
