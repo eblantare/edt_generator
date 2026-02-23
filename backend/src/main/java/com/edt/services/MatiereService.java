@@ -1,9 +1,11 @@
+// C:\projets\java\edt-generator\backend\src\main\java\com\edt\services\MatiereService.java
 package com.edt.services;
 
 import com.edt.dtos.MatiereDTO;
 import com.edt.entities.Matiere;
 import com.edt.repository.MatiereRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +31,7 @@ public class MatiereService {
             .collect(Collectors.toList());
     }
     
-    // NOUVELLE méthode pour la pagination
+    // Méthode pour la pagination
     public Page<MatiereDTO> getAllMatieresPaginated(
         int page, 
         int size, 
@@ -103,7 +105,24 @@ public class MatiereService {
     }
     
     public void deleteMatiere(String id) {
-        matiereRepository.deleteById(id);
+        try {
+            // Vérifier d'abord si la matière existe
+            Matiere matiere = matiereRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Matière non trouvée"));
+            
+            // Vérifier si la matière est utilisée par des enseignants
+            boolean estUtilisee = matiereRepository.estMatiereUtilisee(id);
+            
+            if (estUtilisee) {
+                throw new RuntimeException("IMPOSSIBLE_SUPPRIMER_MATIERE_UTILISEE");
+            }
+            
+            matiereRepository.deleteById(id);
+            
+        } catch (DataIntegrityViolationException e) {
+            // En cas d'erreur de contrainte de clé étrangère
+            throw new RuntimeException("IMPOSSIBLE_SUPPRIMER_MATIERE_UTILISEE");
+        }
     }
     
     private MatiereDTO convertToDTO(Matiere matiere) {
@@ -116,7 +135,7 @@ public class MatiereService {
         return dto;
     }
     
-    // Méthode utilitaire pour le mapping des cycles (optionnel)
+    // Méthode utilitaire pour le mapping des cycles
     public String getCycleDisplayName(String cycleCode) {
         switch (cycleCode) {
             case "college": return "Collège";

@@ -29,6 +29,9 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   filterByEffectif = true;
   commentaire = '';
   
+  // Pour la multi-sélection des classes
+  selectedClasses: string[] = [];
+  
   enseignement: EnseignementDTO = {
     enseignantId: '',
     matiereId: '',
@@ -45,6 +48,9 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   selectedMatiere: any = null;
   selectedClasse: any = null;
   selectedEnseignantHeuresAttribuees = 0;
+  
+  // Pour les calculs mathématiques dans le template
+  Math = Math;
   
   heuresValidation = {
     isValid: false,
@@ -109,7 +115,7 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   loadData() {
     console.log('🔄 Début de loadData()');
     this.isLoading = true;
-    this.cdr.detectChanges(); // Force update initial
+    this.cdr.detectChanges();
     
     // Compteur de requêtes
     let requestsCompleted = 0;
@@ -253,6 +259,8 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
           this.classeService.getClasse(enseignement.classeId).subscribe({
             next: (classe: any) => {
               this.selectedClasse = classe;
+              // En mode édition, initialiser la sélection avec cette classe
+              this.selectedClasses = [enseignement.classeId];
             },
             error: (error) => {
               console.error('Erreur lors du chargement de la classe:', error);
@@ -316,11 +324,8 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   }
 
   onClasseSelected() {
-    if (this.enseignement.classeId) {
-      this.selectedClasse = this.classes.find(c => c.id === this.enseignement.classeId);
-    } else {
-      this.selectedClasse = null;
-    }
+    // Cette méthode est conservée pour compatibilité
+    // La sélection se fait maintenant via toggleClasseSelection
   }
 
   onAllowOtherMatieresChange() {
@@ -346,6 +351,49 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Méthodes pour la gestion de la sélection multiple des classes
+  isClasseSelected(classeId: string): boolean {
+    return this.selectedClasses.includes(classeId);
+  }
+
+  toggleClasseSelection(classeId: string): void {
+    const index = this.selectedClasses.indexOf(classeId);
+    if (index === -1) {
+      this.selectedClasses.push(classeId);
+    } else {
+      this.selectedClasses.splice(index, 1);
+    }
+    this.onClasseSelected();
+    this.validateHeures();
+    this.cdr.detectChanges();
+  }
+
+  selectAllClasses(): void {
+    this.selectedClasses = this.filteredClasses.map(c => c.id);
+    this.onClasseSelected();
+    this.validateHeures();
+    this.cdr.detectChanges();
+  }
+
+  removeClasseSelection(classeId: string): void {
+    const index = this.selectedClasses.indexOf(classeId);
+    if (index !== -1) {
+      this.selectedClasses.splice(index, 1);
+      this.onClasseSelected();
+      this.validateHeures();
+      this.cdr.detectChanges();
+    }
+  }
+
+  getSelectedClassesDetails(): any[] {
+    return this.classes.filter(c => this.selectedClasses.includes(c.id));
+  }
+
+  getTotalEffectif(): number {
+    return this.getSelectedClassesDetails()
+      .reduce((total, c) => total + (c.effectif || 0), 0);
+  }
+
   validateHeures() {
     if (!this.selectedEnseignant || !this.enseignement.heuresParSemaine) {
       this.heuresValidation = {
@@ -358,7 +406,9 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const heuresTotal = this.selectedEnseignantHeuresAttribuees + this.enseignement.heuresParSemaine;
+    // Calculer les heures totales en tenant compte du nombre de classes sélectionnées
+    const heuresTotal = this.selectedEnseignantHeuresAttribuees + 
+                        (this.enseignement.heuresParSemaine * this.selectedClasses.length);
     const heuresDisponibles = this.selectedEnseignant.heuresMaxHebdo;
     const pourcentage = (heuresTotal / heuresDisponibles) * 100;
 
@@ -425,7 +475,8 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   getHeuresProgressClass(): string {
     if (!this.selectedEnseignant || !this.enseignement.heuresParSemaine) return 'bg-secondary';
     
-    const heuresTotal = this.selectedEnseignantHeuresAttribuees + this.enseignement.heuresParSemaine;
+    const heuresTotal = this.selectedEnseignantHeuresAttribuees + 
+                        (this.enseignement.heuresParSemaine * this.selectedClasses.length);
     const pourcentage = (heuresTotal / this.selectedEnseignant.heuresMaxHebdo) * 100;
     
     if (pourcentage <= 60) return 'bg-success';
@@ -436,35 +487,38 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
   getHeuresProgressWidth(): number {
     if (!this.selectedEnseignant || !this.enseignement.heuresParSemaine) return 0;
     
-    const heuresTotal = this.selectedEnseignantHeuresAttribuees + this.enseignement.heuresParSemaine;
+    const heuresTotal = this.selectedEnseignantHeuresAttribuees + 
+                        (this.enseignement.heuresParSemaine * this.selectedClasses.length);
     const pourcentage = (heuresTotal / this.selectedEnseignant.heuresMaxHebdo) * 100;
     return Math.min(pourcentage, 100);
   }
 
   previewAttribution() {
+    const classesDetails = this.getSelectedClassesDetails()
+      .map(c => `    • ${c.nom} (${c.niveau || 'N/A'} - ${c.effectif || '?'} élèves)`)
+      .join('\n');
+
     const message = `
       📋 APERÇU DÉTAILLÉ DE L'ATTRIBUTION :
       
       👨‍🏫 ENSEIGNANT:
       • Nom: ${this.selectedEnseignant?.nom} ${this.selectedEnseignant?.prenom}
       • Spécialités: ${this.selectedEnseignant?.matiereDominante?.code || 'Aucune'} ${this.selectedEnseignant?.matiereSecondaire?.code ? ', ' + this.selectedEnseignant.matiereSecondaire.code : ''}
-      • Heures attribuées: ${this.selectedEnseignantHeuresAttribuees}h
+      • Heures déjà attribuées: ${this.selectedEnseignantHeuresAttribuees}h
       • Heures maximum: ${this.selectedEnseignant?.heuresMaxHebdo}h
-      • Nouvelles heures: ${this.enseignement.heuresParSemaine}h
-      • Total après attribution: ${this.selectedEnseignantHeuresAttribuees + this.enseignement.heuresParSemaine}h
       
       📚 MATIÈRE:
       • Code: ${this.selectedMatiere?.code}
       • Nom: ${this.selectedMatiere?.nom}
       • Statut: ${this.isMatiereDeEnseignant(this.enseignement.matiereId) ? 'Spécialité' : 'Hors spécialité'}
       
-      🏫 CLASSE:
-      • Nom: ${this.selectedClasse?.nom}
-      • Niveau: ${this.selectedClasse?.niveau || 'Non spécifié'}
-      • Effectif: ${this.selectedClasse?.effectif || 'Non spécifié'} élèves
+      🏫 CLASSES (${this.selectedClasses.length} sélectionnée(s)):
+${classesDetails}
       
       ⏰ VOLUME HORAIRE:
-      • Heures par semaine: ${this.enseignement.heuresParSemaine} heures
+      • Heures par classe: ${this.enseignement.heuresParSemaine} heures/semaine
+      • Heures totales: ${this.selectedClasses.length * this.enseignement.heuresParSemaine} heures/semaine
+      • Total après attribution: ${this.selectedEnseignantHeuresAttribuees + (this.selectedClasses.length * this.enseignement.heuresParSemaine)}h sur ${this.selectedEnseignant?.heuresMaxHebdo}h
       • Validation: ${this.heuresValidation.message}
       
       ${this.commentaire ? `
@@ -484,6 +538,18 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
     // Validation finale avant soumission
     this.validateHeures();
     
+    // Vérifier qu'au moins une classe est sélectionnée
+    if (this.selectedClasses.length === 0) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner au moins une classe');
+      return;
+    }
+
+    // Vérifier que tous les champs requis sont remplis
+    if (!this.enseignement.enseignantId || !this.enseignement.matiereId || !this.enseignement.heuresParSemaine) {
+      this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
     // CORRECTION IMPORTANTE : Bloquer la soumission si dépassement
     if (this.heuresValidation.isError) {
       const confirmSubmit = confirm(
@@ -495,179 +561,156 @@ export class EnseignementFormComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Vérifier que tous les champs requis sont remplis
-    if (!this.enseignement.enseignantId || !this.enseignement.matiereId || !this.enseignement.classeId || !this.enseignement.heuresParSemaine) {
-      this.notificationService.showError('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
     if (this.isEditMode) {
       this.updateEnseignement();
     } else {
       this.createEnseignement();
     }
   }
-   createEnseignement() {
-  this.isLoading = true;
   
-  // 1. Vérifier que les IDs existent
-  if (!this.enseignement.enseignantId || !this.enseignement.matiereId || !this.enseignement.classeId) {
-    this.notificationService.showError('Erreur', 'Veuillez sélectionner tous les champs obligatoires');
-    this.isLoading = false;
-    return;
+  createEnseignement() {
+    this.isLoading = true;
+    
+    if (!this.enseignement.enseignantId || !this.enseignement.matiereId || this.selectedClasses.length === 0) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner tous les champs obligatoires');
+      this.isLoading = false;
+      return;
+    }
+
+    // Créer un enseignement POUR CHAQUE CLASSE sélectionnée
+    const creations: Promise<any>[] = [];
+    
+    for (const classeId of this.selectedClasses) {
+      const classe = this.classes.find(c => c.id === classeId);
+      
+      const enseignementToSend: EnseignementDTO = {
+        enseignantId: this.enseignement.enseignantId,
+        matiereId: this.enseignement.matiereId,
+        classeId: classeId,
+        heuresParSemaine: this.enseignement.heuresParSemaine,
+        
+        enseignantNom: this.selectedEnseignant?.nom,
+        enseignantPrenom: this.selectedEnseignant?.prenom,
+        enseignantMatricule: this.selectedEnseignant?.matricule,
+        
+        classeNom: classe?.nom,
+        classeNiveau: classe?.niveau,
+        classeFiliere: classe?.filiere,
+        classeEffectif: classe?.effectif,
+        
+        matiereCode: this.selectedMatiere?.code,
+        matiereNom: this.selectedMatiere?.nom,
+        matiereCycle: this.selectedMatiere?.cycle,
+        
+        estMatiereDominante: this.isMatiereDominante(this.enseignement.matiereId),
+        statut: 'ACTIF',
+        ordrePriorite: 2,
+        commentaire: this.commentaire || '',
+        heuresAttribuees: 0,
+        heuresRestantes: this.enseignement.heuresParSemaine
+      };
+
+      // Convertir l'observable en promesse pour gérer plusieurs appels
+      creations.push(
+        this.enseignementService.createEnseignement(enseignementToSend).toPromise()
+      );
+    }
+
+    // Attendre que toutes les créations soient terminées
+    Promise.all(creations)
+      .then(results => {
+        console.log('✅ Créations réussies:', results);
+        this.notificationService.showSuccess(
+          'Attributions créées avec succès!',
+          `${results.length} attribution(s) créée(s) pour ${this.selectedEnseignant?.nom}`
+        );
+        this.isLoading = false;
+        this.router.navigate(['/enseignements']);
+      })
+      .catch(error => {
+        console.error('❌ Erreur lors de la création:', error);
+        this.notificationService.showError(
+          'Erreur',
+          error.error?.message || error.message || 'Une erreur est survenue'
+        );
+        this.isLoading = false;
+      });
   }
 
-  // 2. Créer l'objet EXACTEMENT comme le backend l'attend
-  const enseignementToSend: EnseignementDTO = {
-    enseignantId: this.enseignement.enseignantId,
-    matiereId: this.enseignement.matiereId,
-    classeId: this.enseignement.classeId,
-    heuresParSemaine: this.enseignement.heuresParSemaine,
-    
-    // Optionnel: ajouter des informations supplémentaires si disponibles
-    enseignantNom: this.selectedEnseignant?.nom,
-    enseignantPrenom: this.selectedEnseignant?.prenom,
-    enseignantMatricule: this.selectedEnseignant?.matricule,
-    
-    classeNom: this.selectedClasse?.nom,
-    classeNiveau: this.selectedClasse?.niveau,
-    classeFiliere: this.selectedClasse?.filiere,
-    classeEffectif: this.selectedClasse?.effectif,
-    
-    matiereCode: this.selectedMatiere?.code,
-    matiereNom: this.selectedMatiere?.nom,
-    matiereCycle: this.selectedMatiere?.cycle,
-    
-    // Vérifier si c'est une matière dominante
-    estMatiereDominante: this.isMatiereDominante(this.enseignement.matiereId),
-    
-    // Valeurs par défaut
-    statut: 'ACTIF',
-    ordrePriorite: 2,
-    commentaire: this.commentaire || '',
-    heuresAttribuees: 0,
-    heuresRestantes: this.enseignement.heuresParSemaine
-  };
+  // MODIFIÉE POUR GÉRER LA MULTI-SÉLECTION
+  updateEnseignement() {
+    if (!this.enseignement.id) {
+      this.notificationService.showError('Erreur', 'ID de l\'enseignement manquant');
+      return;
+    }
 
-  console.log('📤 Envoi au serveur:', JSON.stringify(enseignementToSend, null, 2));
+    this.isLoading = true;
 
-  // 3. Envoyer la requête
-  this.enseignementService.createEnseignement(enseignementToSend).subscribe({
-    next: (response) => {
-      console.log('✅ Succès! Réponse:', response);
-      this.notificationService.showSuccess(
-        'Attribution créée avec succès!',
-        `${this.selectedEnseignant?.nom} ${this.selectedEnseignant?.prenom} enseigne maintenant ${this.selectedMatiere?.nom} à ${this.selectedClasse?.nom}`
-      );
-      this.isLoading = false;
-      this.router.navigate(['/enseignements']);
-    },
-    error: (error) => {
-      console.error('❌ Erreur lors de la création:', error);
+    // Pour la mise à jour, on utilise la première classe sélectionnée
+    // (on ne peut pas mettre à jour plusieurs classes à la fois)
+    const classeId = this.selectedClasses[0] || this.enseignement.classeId;
+    const classe = this.classes.find(c => c.id === classeId);
+
+    const enseignementToSend: EnseignementDTO = {
+      id: this.enseignement.id,
+      enseignantId: this.enseignement.enseignantId,
+      matiereId: this.enseignement.matiereId,
+      classeId: classeId,
+      heuresParSemaine: this.enseignement.heuresParSemaine,
       
-      let errorMessage = 'Une erreur est survenue';
+      enseignantNom: this.selectedEnseignant?.nom,
+      enseignantPrenom: this.selectedEnseignant?.prenom,
+      enseignantMatricule: this.selectedEnseignant?.matricule,
       
-      if (error.status === 400) {
-        // Erreur de validation côté serveur
-        if (error.error) {
-          try {
-            const errorObj = typeof error.error === 'string' ? JSON.parse(error.error) : error.error;
-            console.error('❌ Détails erreur:', errorObj);
-            
-            if (errorObj.message) {
-              errorMessage = errorObj.message;
-            } else if (errorObj.errors) {
-              errorMessage = errorObj.errors.map((e: any) => e.defaultMessage || e.message).join(', ');
-            }
-          } catch (e) {
-            errorMessage = 'Données invalides envoyées au serveur';
-          }
-        }
-      } else if (error.status === 409) {
-        errorMessage = 'Cette attribution existe déjà';
-      } else if (error.status === 500) {
-        errorMessage = 'Erreur interne du serveur';
+      classeNom: classe?.nom,
+      classeNiveau: classe?.niveau,
+      classeFiliere: classe?.filiere,
+      classeEffectif: classe?.effectif,
+      
+      matiereCode: this.selectedMatiere?.code,
+      matiereNom: this.selectedMatiere?.nom,
+      matiereCycle: this.selectedMatiere?.cycle,
+      
+      estMatiereDominante: this.isMatiereDominante(this.enseignement.matiereId),
+      statut: 'ACTIF',
+      ordrePriorite: 2,
+      commentaire: this.commentaire || ''
+    };
+
+    this.enseignementService.updateEnseignement(this.enseignement.id, enseignementToSend).subscribe({
+      next: (response) => {
+        console.log('✅ Mise à jour réussie:', response);
+        this.notificationService.showSuccess(
+          'Succès',
+          'Attribution mise à jour avec succès!'
+        );
+        this.isLoading = false;
+        this.router.navigate(['/enseignements']);
+      },
+      error: (error) => {
+        console.error('Erreur lors de la mise à jour:', error);
+        this.notificationService.showError(
+          'Erreur',
+          error.error?.message || error.message || 'Une erreur est survenue'
+        );
+        this.isLoading = false;
       }
-      
-      this.notificationService.showError('Erreur', errorMessage);
-      this.isLoading = false;
-      
-      // DEBUG: Afficher un message pour aider au diagnostic
-      console.error('🛠️ Pour debugger, ouvrez DevTools (F12) → Network');
-      console.error('🛠️ Cliquez sur la requête POST /api/enseignements');
-      console.error('🛠️ Regardez "Request Payload" et "Response"');
-    }
-  });
-}
-
-  // MODIFIEZ AUSSI LA MÉTHODE updateEnseignement() :
-
-updateEnseignement() {
-  if (!this.enseignement.id) {
-    this.notificationService.showError('Erreur', 'ID de l\'enseignement manquant');
-    return;
+    });
   }
-
-  this.isLoading = true;
-
-  // Créer l'objet avec la même structure
-  const enseignementToSend: EnseignementDTO = {
-    id: this.enseignement.id,
-    enseignantId: this.enseignement.enseignantId,
-    matiereId: this.enseignement.matiereId,
-    classeId: this.enseignement.classeId,
-    heuresParSemaine: this.enseignement.heuresParSemaine,
-    
-    // Informations supplémentaires
-    enseignantNom: this.selectedEnseignant?.nom,
-    enseignantPrenom: this.selectedEnseignant?.prenom,
-    enseignantMatricule: this.selectedEnseignant?.matricule,
-    
-    classeNom: this.selectedClasse?.nom,
-    classeNiveau: this.selectedClasse?.niveau,
-    classeFiliere: this.selectedClasse?.filiere,
-    classeEffectif: this.selectedClasse?.effectif,
-    
-    matiereCode: this.selectedMatiere?.code,
-    matiereNom: this.selectedMatiere?.nom,
-    matiereCycle: this.selectedMatiere?.cycle,
-    
-    estMatiereDominante: this.isMatiereDominante(this.enseignement.matiereId),
-    statut: 'ACTIF',
-    ordrePriorite: 2,
-    commentaire: this.commentaire || ''
-  };
-
-  this.enseignementService.updateEnseignement(this.enseignement.id, enseignementToSend).subscribe({
-    next: (response) => {
-      console.log('✅ Mise à jour réussie:', response);
-      this.notificationService.showSuccess(
-        'Succès',
-        'Attribution mise à jour avec succès!'
-      );
-      this.isLoading = false;
-      this.router.navigate(['/enseignements']);
-    },
-    error: (error) => {
-      console.error('Erreur lors de la mise à jour:', error);
-      this.notificationService.showError(
-        'Erreur',
-        error.error?.message || error.message || 'Une erreur est survenue'
-      );
-      this.isLoading = false;
-    }
-  });
-}
 
   confirmDelete() {
     if (!this.enseignement.id) return;
+    
+    const classesList = this.selectedClasses.length > 0 
+      ? this.getSelectedClassesDetails().map(c => c.nom).join(', ')
+      : this.selectedClasse?.nom || 'Non spécifiée';
     
     const confirmationMessage = `
       Voulez-vous vraiment supprimer cette attribution ?
       
       Enseignant: ${this.selectedEnseignant?.nom} ${this.selectedEnseignant?.prenom}
       Matière: ${this.selectedMatiere?.nom}
-      Classe: ${this.selectedClasse?.nom}
+      Classe(s): ${classesList}
       Heures: ${this.enseignement.heuresParSemaine}h/semaine
       
       Cette action est irréversible.
@@ -703,7 +746,7 @@ updateEnseignement() {
   }
 
   cancel() {
-    if (this.enseignement.enseignantId || this.enseignement.matiereId || this.enseignement.classeId) {
+    if (this.enseignement.enseignantId || this.enseignement.matiereId || this.selectedClasses.length > 0) {
       if (confirm('Voulez-vous vraiment annuler ? Les modifications seront perdues.')) {
         this.router.navigate(['/enseignements']);
       }

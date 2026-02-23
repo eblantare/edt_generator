@@ -1,13 +1,17 @@
+// C:\projets\java\edt-generator\backend\src\main\java\com\edt\controllers\MatiereController.java
 package com.edt.controllers;
 
 import com.edt.dtos.MatiereDTO;
 import com.edt.services.MatiereService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/matieres")
@@ -26,7 +30,7 @@ public class MatiereController {
         return ResponseEntity.ok(matieres);
     }
     
-    // NOUVEL endpoint pour la pagination
+    // Endpoint pour la pagination
     @GetMapping("/paginated")
     public ResponseEntity<Page<MatiereDTO>> getMatieresPaginated(
         @RequestParam(defaultValue = "0") int page,
@@ -42,11 +46,7 @@ public class MatiereController {
             page, size, search, sortBy, sortDirection
         );
         
-        // Log pour déboguer
         System.out.println("✅ Retourne " + matieresPage.getNumberOfElements() + " matières");
-        matieresPage.getContent().forEach(m -> 
-            System.out.println("  - ID: " + m.getId() + ", Code: " + m.getCode())
-        );
         
         return ResponseEntity.ok(matieresPage);
     }
@@ -76,9 +76,30 @@ public class MatiereController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMatiere(@PathVariable String id) {
+    public ResponseEntity<?> deleteMatiere(@PathVariable String id) {
         System.out.println("📡 DELETE /api/matieres/" + id);
-        matiereService.deleteMatiere(id);
-        return ResponseEntity.noContent().build();
+        
+        try {
+            matiereService.deleteMatiere(id);
+            return ResponseEntity.noContent().build();
+            
+        } catch (RuntimeException e) {
+            if ("IMPOSSIBLE_SUPPRIMER_MATIERE_UTILISEE".equals(e.getMessage())) {
+                // Retourner une erreur 400 avec un message clair
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("code", "IMPOSSIBLE_SUPPRIMER");
+                errorResponse.put("message", "Cette matière ne peut pas être supprimée car elle est rattachée à un ou plusieurs enseignants.");
+                
+                System.out.println("❌ Impossible de supprimer - matière utilisée par des enseignants");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+            // Autres erreurs
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("code", "ERREUR_TECHNIQUE");
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }

@@ -1,3 +1,4 @@
+// C:\projets\java\edt-generator\backend\src\main\java\com\edt\repository\MatiereRepository.java
 package com.edt.repository;
 
 import com.edt.entities.Matiere;
@@ -10,13 +11,19 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MatiereRepository extends JpaRepository<Matiere, String> {
+    
     Matiere findByCode(String code);
     
-    // Recherche avec pagination - CORRIGÉE pour utiliser 'cycle' au lieu de 'niveau'
+    // Recherche avec pagination
     @Query("SELECT m FROM Matiere m WHERE " +
            "LOWER(m.code) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.cycle) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.niveauClasse) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Matiere> searchMatieres(@Param("search") String search, Pageable pageable);
+    
+    // Vérifier si une matière est utilisée par des enseignants
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Enseignant e " +
+           "WHERE e.matiereDominante.id = :matiereId OR e.matiereSecondaire.id = :matiereId")
+    boolean estMatiereUtilisee(@Param("matiereId") String matiereId);
 }

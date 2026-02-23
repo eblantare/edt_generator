@@ -25,7 +25,7 @@ export class NotificationService {
     return this.notificationsSubject.asObservable();
   }
 
-  // Méthode pour ajouter une notification (corrigée avec NgZone)
+  // 🔴 VERSION CORRIGÉE: Plus de setTimeout dans addNotification
   addNotification(notification: Omit<Notification, 'id' | 'timestamp'>): number {
     let newId = 0;
     
@@ -40,18 +40,14 @@ export class NotificationService {
       this.notificationsSubject.next([...currentNotifications, newNotification]);
       newId = newNotification.id;
       
-      // Auto-remove si configuré
-      if (notification.autoClose !== false) {
-        setTimeout(() => {
-          this.removeNotification(newNotification.id);
-        }, 5000); // Ferme automatiquement après 5 secondes
-      }
+      // 🔴 SUPPRIMÉ: Le setTimeout est retiré d'ici
+      // La fermeture automatique sera gérée par le composant
     });
     
     return newId;
   }
 
-  // Méthode pour supprimer une notification (corrigée avec NgZone)
+  // Méthode pour supprimer une notification
   removeNotification(id: number): void {
     this.ngZone.run(() => {
       const currentNotifications = this.notificationsSubject.value;
@@ -62,72 +58,72 @@ export class NotificationService {
     });
   }
 
-  // Méthodes principales
-  success(title: string, message: string, autoClose: boolean = true): number {
+  // 🔴 NOUVELLE MÉTHODE: Supprimer une notification après un délai
+  autoRemove(id: number, delay: number = 5000): void {
+    setTimeout(() => {
+      this.removeNotification(id);
+    }, delay);
+  }
+
+  // Méthodes principales - SANS autoClose
+  success(title: string, message: string): number {
     return this.addNotification({
       type: 'success',
       title,
       message,
-      autoClose
+      autoClose: true
     });
   }
 
-  error(title: string, message: string, autoClose: boolean = false): number {
+  error(title: string, message: string): number {
     return this.addNotification({
       type: 'error',
       title,
       message,
-      autoClose
+      autoClose: false
     });
   }
 
-  info(title: string, message: string, autoClose: boolean = true): number {
+  info(title: string, message: string): number {
     return this.addNotification({
       type: 'info',
       title,
       message,
-      autoClose
+      autoClose: true
     });
   }
 
-  warning(title: string, message: string, autoClose: boolean = true): number {
+  warning(title: string, message: string): number {
     return this.addNotification({
       type: 'warning',
       title,
       message,
-      autoClose
+      autoClose: true
     });
   }
 
   // Méthodes de compatibilité (alias)
   showSuccess(message: string, title: string = 'Succès'): number {
-    return this.success(title, message, true);
+    return this.success(title, message);
   }
 
   showError(message: string, title: string = 'Erreur'): number {
-    return this.error(title, message, false);
+    return this.error(title, message);
   }
 
   showInfo(message: string, title: string = 'Information'): number {
-    return this.info(title, message, true);
+    return this.info(title, message);
   }
 
   showWarning(message: string, title: string = 'Attention'): number {
-    return this.warning(title, message, true);
+    return this.warning(title, message);
   }
 
-  // Méthode pour vider toutes les notifications (corrigée avec NgZone)
+  // Méthode pour vider toutes les notifications
   clearAll(): void {
     this.ngZone.run(() => {
       this.notificationsSubject.next([]);
     });
-  }
-
-  // Méthode utilitaire pour fermer une notification après un délai
-  autoRemove(id: number, delay: number = 5000): void {
-    setTimeout(() => {
-      this.removeNotification(id);
-    }, delay);
   }
 
   // Méthode pour mettre à jour une notification
@@ -158,7 +154,7 @@ export class NotificationService {
   // Méthode pour obtenir les dernières notifications
   getRecentNotifications(limit: number = 5): Notification[] {
     const notifications = this.notificationsSubject.value;
-    return notifications
+    return [...notifications]
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
   }

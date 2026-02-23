@@ -1,10 +1,10 @@
+// C:\projets\java\edt-generator\frontend\src\app\components\matiere-list\matiere-list.component.ts
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatiereService, MatiereListResponse } from '../../services/matiere.service';
 import { Matiere } from '../../models/enseignant.model';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal.component';
 import { NotificationService } from '../../services/notification.service';
 
 @Component({
@@ -12,7 +12,7 @@ import { NotificationService } from '../../services/notification.service';
   templateUrl: './matiere-list.component.html',
   styleUrls: ['./matiere-list.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ConfirmationModalComponent]
+  imports: [CommonModule, RouterModule, FormsModule]
 })
 export class MatiereListComponent implements OnInit {
   matieres: Matiere[] = [];
@@ -29,12 +29,6 @@ export class MatiereListComponent implements OnInit {
 
   // Cache pour éviter les calculs répétitifs
   private validationCache = new Map<string, boolean>();
-
-  // Modal properties
-  showDeleteModal = false;
-  matiereToDelete: string | null = null;
-  deleteModalTitle = 'Confirmation de suppression';
-  deleteModalMessage = 'Êtes-vous sûr de vouloir supprimer cette matière ? Cette action est irréversible.';
 
   // Mapping des cycles pour l'affichage
   private cyclesMap: { [key: string]: string } = {
@@ -57,17 +51,10 @@ export class MatiereListComponent implements OnInit {
   }
 
   loadMatieres(): void {
-    console.log('🟡 MatiereListComponent - Chargement matières:', {
-      page: this.currentPage,
-      size: this.pageSize,
-      search: this.searchTerm,
-      sortBy: this.sortBy,
-      sortDirection: this.sortDirection
-    });
-
+    console.log('🟡 MatiereListComponent - Chargement matières');
+    
     this.isLoading = true;
-    this.matieres = [];
-    this.validationCache.clear(); // Vider le cache à chaque nouveau chargement
+    this.validationCache.clear();
 
     this.matiereService.getMatieresPaginated(
       this.currentPage,
@@ -77,91 +64,41 @@ export class MatiereListComponent implements OnInit {
       this.sortDirection
     ).subscribe({
       next: (response: MatiereListResponse) => {
-        console.log('🟢 MatiereListComponent - Données reçues:', {
-          count: response.content?.length || 0,
-          total: response.totalElements,
-          pages: response.totalPages,
-          page: response.number,
-          size: response.size
-        });
-
-        // CORRECTION OPTIMISÉE: Calculer une fois la validité et éviter les IDs temporaires
-        this.matieres = (response.content || []).map(matiere => {
-          // Si la matière n'a pas d'ID valide
-          if (!this.isIdValid(matiere.id)) {
-            console.warn(`⚠️ Matière sans ID valide: ${matiere.code}`);
-
-            // CORRECTION: Ne PAS créer d'ID temporaire pour éviter la confusion
-            // La matière reste dans la liste mais les boutons seront désactivés
-            return matiere;
-          }
-          return matiere;
-        });
-
-        // Vérifier les IDs dans la console (une seule fois)
-        console.log('📋 Liste des matières chargées:');
-        this.matieres.forEach((matiere, index) => {
-          console.log(`📊 Matière ${index + 1}:`, {
-            id: matiere.id,
-            code: matiere.code,
-            nom: matiere.nom,
-            cycle: matiere.cycle,
-            niveauClasse: matiere.niveauClasse,
-            isValid: this.isIdValid(matiere.id)
-          });
-
-          // Pré-calculer et mettre en cache la validité
+        console.log('🟢 MatiereListComponent - Données reçues:', response.content?.length || 0);
+        
+        this.matieres = response.content || [];
+        this.totalElements = response.totalElements || 0;
+        this.totalPages = response.totalPages || 0;
+        this.isLoading = false;
+        
+        this.matieres.forEach(matiere => {
           if (matiere.id) {
             this.validationCache.set(matiere.id, this.isIdValid(matiere.id));
           }
         });
-
-        this.totalElements = response.totalElements || 0;
-        this.totalPages = response.totalPages || 0;
-        this.isLoading = false;
-
+        
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('❌ MatiereListComponent - Erreur lors du chargement:', error);
-
-        this.notificationService.error(
-          'Erreur',
-          `Impossible de charger la liste des matières: ${error.message}`
-        );
-
-        this.matieres = [];
-        this.totalElements = 0;
-        this.totalPages = 0;
         this.isLoading = false;
-
         this.cdr.detectChanges();
       }
     });
   }
 
-  // CORRECTION: Méthode privée pour valider un ID
   private isIdValid(id: string | undefined): boolean {
     if (!id) return false;
     return id !== 'null' && id !== 'undefined' && !id.includes('temp_');
   }
 
-  // CORRECTION OPTIMISÉE: Méthode pour vérifier si une matière est valide AVEC CACHE
   isValidMatiere(matiere: Matiere): boolean {
-    if (!matiere) return false;
-
-    // Si pas d'ID, invalide
-    if (!matiere.id) return false;
-
-    // Vérifier le cache d'abord
+    if (!matiere || !matiere.id) return false;
     if (this.validationCache.has(matiere.id)) {
       return this.validationCache.get(matiere.id)!;
     }
-
-    // Calculer et mettre en cache
     const isValid = this.isIdValid(matiere.id);
     this.validationCache.set(matiere.id, isValid);
-
     return isValid;
   }
 
@@ -201,14 +138,12 @@ export class MatiereListComponent implements OnInit {
 
   sort(column: string): void {
     console.log('🔀 MatiereListComponent - Tri par:', column);
-
     if (this.sortBy === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortBy = column;
       this.sortDirection = 'asc';
     }
-
     this.currentPage = 0;
     this.loadMatieres();
   }
@@ -221,7 +156,6 @@ export class MatiereListComponent implements OnInit {
   getPaginationPages(): (number | string)[] {
     const pages: (number | string)[] = [];
     const maxVisiblePages = 5;
-
     if (this.totalPages <= maxVisiblePages) {
       for (let i = 0; i < this.totalPages; i++) {
         pages.push(i);
@@ -229,18 +163,15 @@ export class MatiereListComponent implements OnInit {
     } else {
       const startPage = Math.max(0, this.currentPage - Math.floor(maxVisiblePages / 2));
       const endPage = Math.min(this.totalPages - 1, startPage + maxVisiblePages - 1);
-
       if (startPage > 0) {
         pages.push(0);
         if (startPage > 1) {
           pages.push('...');
         }
       }
-
       for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
       }
-
       if (endPage < this.totalPages - 1) {
         if (endPage < this.totalPages - 2) {
           pages.push('...');
@@ -248,7 +179,6 @@ export class MatiereListComponent implements OnInit {
         pages.push(this.totalPages - 1);
       }
     }
-
     return pages;
   }
 
@@ -266,66 +196,55 @@ export class MatiereListComponent implements OnInit {
     return (page + 1).toString();
   }
 
-  confirmDeleteMatiere(id: string): void {
+  confirmDeleteMatiere(id: string | undefined, nom?: string): void {
     console.log('🗑️ MatiereListComponent - Confirmation suppression ID:', id);
-
-    // CORRECTION: Vérifier si c'est un ID valide
+    
+    if (!id) {
+      alert(`❌ Impossible de supprimer: identifiant manquant.`);
+      return;
+    }
+    
+    const matiereNom = nom || 'cette matière';
+    
     if (!this.isIdValid(id)) {
-      this.notificationService.error(
-        'Erreur',
-        'Impossible de supprimer: ID invalide.'
-      );
+      alert(`❌ Impossible de supprimer: identifiant invalide.`);
       return;
     }
 
-    this.matiereToDelete = id;
-    this.showDeleteModal = true;
-  }
-
-  onDeleteConfirmed(): void {
-    if (this.matiereToDelete) {
-      console.log('✅ MatiereListComponent - Suppression confirmée ID:', this.matiereToDelete);
-
-      this.matiereService.deleteMatiere(this.matiereToDelete).subscribe({
+    if (confirm(`Êtes-vous sûr de vouloir supprimer la matière "${matiereNom}" ? Cette action est irréversible.`)) {
+      this.matiereService.deleteMatiere(id).subscribe({
         next: () => {
-          this.notificationService.success(
-            'Succès',
-            'Matière supprimée avec succès'
-          );
+          alert(`✅ Matière "${matiereNom}" supprimée avec succès`);
           this.loadMatieres();
         },
         error: (error) => {
-          console.error('❌ MatiereListComponent - Erreur suppression:', error);
-          this.notificationService.error(
-            'Erreur',
-            `Erreur lors de la suppression de la matière: ${error.message}`
-          );
+          console.error('❌ API - Erreur suppression:', error);
+          
+          if (error.status === 400) {
+            alert(`⚠️ Impossible de supprimer "${matiereNom}" : matière rattachée à des enseignants`);
+          } else if (error.status === 404) {
+            alert(`❌ Matière "${matiereNom}" non trouvée`);
+          } else {
+            alert(`❌ Erreur: ${error.message}`);
+          }
+          
+          this.loadMatieres();
         }
       });
     }
-    this.showDeleteModal = false;
-    this.matiereToDelete = null;
   }
 
-  onDeleteCancelled(): void {
-    console.log('❌ MatiereListComponent - Suppression annulée');
-    this.showDeleteModal = false;
-    this.matiereToDelete = null;
-  }
-
-  // NOUVELLE MÉTHODE: Obtenir le nom d'affichage du cycle
   getCycleDisplayName(cycle: string): string {
     return this.cyclesMap[cycle] || cycle;
   }
 
-  // MÉTHODE MODIFIÉE: Classes de badges pour les cycles
   getCycleBadgeClass(cycle: string): string {
     const cycleClasses: { [key: string]: string } = {
       'college': 'bg-primary',
       'lycee': 'bg-success',
       'lycee_pro': 'bg-warning',
       'lycee_tech': 'bg-info',
-      'bt': 'bg-purple'
+      'bt': 'bg-secondary'
     };
     return cycleClasses[cycle] || 'bg-secondary';
   }

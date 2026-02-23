@@ -274,47 +274,71 @@
           </div>
         </div>
 
-        <!-- SECTION 3 : Sélection de la classe et heures -->
+        <!-- SECTION 3 : Sélection des classes et volume horaire -->
         <div class="mb-4">
           <h5 class="border-bottom pb-2 mb-3">
             <i class="bi bi-people me-2"></i>
-            3. Sélection de la classe et volume horaire
+            3. Sélection des classes et volume horaire
           </h5>
           
           <div class="row">
             <div class="col-md-8">
-              <!-- Sélection de la classe -->
+              <!-- Sélection multiple des classes -->
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <label for="classeSelect" class="form-label fw-bold">
-                    Classe <span class="text-danger">*</span>
+                  <label class="form-label fw-bold">
+                    Classes <span class="text-danger">*</span>
+                    <span class="badge bg-info ms-2">{{ selectedClasses.length }} sélectionnée(s)</span>
                   </label>
-                  <button type="button"
-                          class="btn btn-sm btn-outline-secondary"
-                          (click)="toggleClassFilter()">
-                    <i class="bi bi-funnel me-1"></i>
-                    Filtres
-                  </button>
+                  <div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary me-2"
+                            (click)="toggleClassFilter()">
+                      <i class="bi bi-funnel me-1"></i>
+                      Filtres
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            (click)="selectAllClasses()"
+                            [disabled]="filteredClasses.length === 0">
+                      <i class="bi bi-check-all me-1"></i>
+                      Tout sélectionner
+                    </button>
+                  </div>
                 </div>
                 
-                <select id="classeSelect"
-                        class="form-select form-select-lg"
-                        [(ngModel)]="enseignement.classeId"
-                        name="classeId"
-                        required
-                        (change)="onClasseSelected()"
-                        [class.is-invalid]="!enseignement.classeId && enseignementForm.submitted"
-                        [disabled]="isLoading">
-                  <option value="" disabled selected>Sélectionnez une classe...</option>
-                  <option *ngFor="let classe of filteredClasses"
-                          [value]="classe.id">
-                    {{ classe.nom }}
-                    <span *ngIf="classe.niveau" class="text-muted ms-2">(Niveau: {{ classe.niveau }})</span>
-                    <span *ngIf="classe.effectif" class="text-muted ms-2">- {{ classe.effectif }} élèves</span>
-                  </option>
-                </select>
-                <div class="invalid-feedback">
-                  Veuillez sélectionner une classe.
+                <!-- Zone de sélection multiple -->
+                <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                  <div *ngFor="let classe of filteredClasses" class="form-check mb-2">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           [id]="'classe-' + classe.id"
+                           [checked]="isClasseSelected(classe.id)"
+                           (change)="toggleClasseSelection(classe.id)">
+                    <label class="form-check-label d-flex justify-content-between align-items-center w-100" 
+                           [for]="'classe-' + classe.id">
+                      <span>
+                        <i class="bi bi-building me-2"></i>
+                        <strong>{{ classe.nom }}</strong>
+                        <span *ngIf="classe.niveau" class="text-muted ms-2">(Niveau: {{ classe.niveau }})</span>
+                      </span>
+                      <span>
+                        <span *ngIf="classe.effectif" class="badge bg-secondary me-2">
+                          {{ classe.effectif }} élèves
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div *ngIf="filteredClasses.length === 0" class="text-center py-4">
+                    <i class="bi bi-inbox display-6 text-muted"></i>
+                    <p class="text-muted mt-2">Aucune classe disponible</p>
+                  </div>
+                </div>
+                
+                <div class="form-text mt-2">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Vous pouvez sélectionner plusieurs classes pour cette attribution. Le volume horaire sera le même pour toutes les classes sélectionnées.
                 </div>
               </div>
               
@@ -375,7 +399,7 @@
                          max="40"
                          (input)="validateHeures()"
                          [class.is-invalid]="(!enseignement.heuresParSemaine || enseignement.heuresParSemaine < 1) && enseignementForm.submitted">
-                  <span class="input-group-text">heures/semaine</span>
+                  <span class="input-group-text">heures/semaine <span *ngIf="selectedClasses.length > 0">(pour chaque classe)</span></span>
                 </div>
                 <div class="invalid-feedback">
                   Veuillez saisir un nombre d'heures valide (entre 1 et 40).
@@ -383,6 +407,19 @@
                 <div class="form-text">
                   <i class="bi bi-info-circle me-1"></i>
                   Le volume horaire standard est de 4 heures par semaine
+                </div>
+              </div>
+              
+              <!-- Récapitulatif des heures totales -->
+              <div class="alert alert-info" *ngIf="selectedClasses.length > 0 && enseignement.heuresParSemaine">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-calculator me-3 fs-4"></i>
+                  <div>
+                    <strong>Récapitulatif des heures :</strong><br>
+                    • {{ selectedClasses.length }} classe(s) × {{ enseignement.heuresParSemaine }}h = 
+                    <strong>{{ selectedClasses.length * enseignement.heuresParSemaine }}h/semaine au total</strong><br>
+                    • Charge pour l'enseignant : {{ selectedClasses.length * enseignement.heuresParSemaine }}h supplémentaires
+                  </div>
                 </div>
               </div>
               
@@ -412,7 +449,7 @@
                 </div>
               </div>
 
-              <!-- ALERTE DE DÉPASSEMENT DE LIMITE (AJOUTÉE ICI) -->
+              <!-- ALERTE DE DÉPASSEMENT DE LIMITE -->
               <div class="alert alert-danger" *ngIf="heuresValidation.isError">
                 <div class="d-flex align-items-center">
                   <i class="bi bi-exclamation-octagon-fill me-2 fs-4"></i>
@@ -424,67 +461,65 @@
                       <strong>{{ selectedEnseignant?.heuresMaxHebdo }}h</strong>.
                     </p>
                     <p class="mb-0">
-                      <strong>Total après attribution : {{ selectedEnseignantHeuresAttribuees + enseignement.heuresParSemaine }}h</strong>
-                      (Dépassement de {{ (selectedEnseignantHeuresAttribuees + enseignement.heuresParSemaine) - selectedEnseignant?.heuresMaxHebdo }}h)
+                      <strong>Total après attribution : {{ selectedEnseignantHeuresAttribuees + enseignement.heuresParSemaine * selectedClasses.length }}h</strong>
+                      (Dépassement de {{ (selectedEnseignantHeuresAttribuees + enseignement.heuresParSemaine * selectedClasses.length) - selectedEnseignant?.heuresMaxHebdo }}h)
                     </p>
                   </div>
                 </div>
                 <div class="mt-2">
                   <button type="button" class="btn btn-sm btn-outline-light" 
-                          (click)="enseignement.heuresParSemaine = selectedEnseignant?.heuresMaxHebdo - selectedEnseignantHeuresAttribuees">
+                          (click)="enseignement.heuresParSemaine = Math.max(1, Math.floor((selectedEnseignant?.heuresMaxHebdo - selectedEnseignantHeuresAttribuees) / selectedClasses.length))">
                     <i class="bi bi-arrow-clockwise me-1"></i>
-                    Ajuster à {{ selectedEnseignant?.heuresMaxHebdo - selectedEnseignantHeuresAttribuees }}h (maximum disponible)
+                    Ajuster au maximum disponible ({{ Math.max(1, Math.floor((selectedEnseignant?.heuresMaxHebdo - selectedEnseignantHeuresAttribuees) / selectedClasses.length)) }}h)
                   </button>
                 </div>
               </div>
             </div>
             
             <div class="col-md-4">
+              <!-- Informations des classes sélectionnées -->
               <div class="card h-100 border-success">
                 <div class="card-header bg-success text-white py-2">
                   <h6 class="mb-0">
                     <i class="bi bi-info-circle me-1"></i>
-                    Informations de la classe
+                    Classes sélectionnées
                   </h6>
                 </div>
                 <div class="card-body">
-                  <div *ngIf="selectedClasse; else noClasseInfo">
+                  <div *ngIf="selectedClasses.length > 0; else noClasseInfo">
                     <div class="mb-3">
-                      <h5 class="card-title">{{ selectedClasse.nom }}</h5>
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-secondary">{{ selectedClasse.niveau || 'Niveau non spécifié' }}</span>
-                        <span class="badge bg-info" *ngIf="selectedClasse.effectif">
-                          {{ selectedClasse.effectif }} élèves
-                        </span>
+                      <h5 class="card-title">{{ selectedClasses.length }} classe(s) sélectionnée(s)</h5>
+                      <div class="list-group list-group-flush mt-3" style="max-height: 300px; overflow-y: auto;">
+                        <div *ngFor="let classe of getSelectedClassesDetails()" 
+                             class="list-group-item d-flex justify-content-between align-items-center">
+                          <div>
+                            <i class="bi bi-building me-2"></i>
+                            <strong>{{ classe.nom }}</strong>
+                            <span class="badge bg-secondary ms-2">{{ classe.niveau || 'N/A' }}</span>
+                          </div>
+                          <button type="button" 
+                                  class="btn btn-sm btn-outline-danger"
+                                  (click)="removeClasseSelection(classe.id)"
+                                  title="Retirer cette classe">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </div>
                       </div>
                     </div>
                     
                     <div class="border-top pt-2">
-                      <h6 class="small text-muted mb-2">Détails de la classe:</h6>
+                      <h6 class="small text-muted mb-2">Résumé :</h6>
                       <ul class="list-unstyled small mb-0">
-                        <li *ngIf="selectedClasse.specialite">
-                          <i class="bi bi-mortarboard me-1"></i>
-                          <strong>Spécialité:</strong> {{ selectedClasse.specialite }}
-                        </li>
-                        <li *ngIf="selectedClasse.salle">
-                          <i class="bi bi-building me-1"></i>
-                          <strong>Salle:</strong> {{ selectedClasse.salle }}
-                        </li>
-                        <li *ngIf="selectedClasse.anneeScolaire">
-                          <i class="bi bi-calendar me-1"></i>
-                          <strong>Année scolaire:</strong> {{ selectedClasse.anneeScolaire }}
-                        </li>
-                        <li *ngIf="selectedClasse.responsable">
-                          <i class="bi bi-person me-1"></i>
-                          <strong>Responsable:</strong> {{ selectedClasse.responsable }}
-                        </li>
+                        <li><i class="bi bi-people me-1"></i> <strong>Effectif total:</strong> {{ getTotalEffectif() }} élèves</li>
+                        <li><i class="bi bi-clock me-1"></i> <strong>Heures totales:</strong> {{ selectedClasses.length * enseignement.heuresParSemaine }}h/semaine</li>
+                        <li><i class="bi bi-bar-chart me-1"></i> <strong>Moyenne par classe:</strong> {{ enseignement.heuresParSemaine }}h</li>
                       </ul>
                     </div>
                   </div>
                   <ng-template #noClasseInfo>
                     <p class="text-muted mb-0 small">
                       <i class="bi bi-arrow-left me-1"></i>
-                      Sélectionnez une classe pour voir ses informations
+                      Sélectionnez une ou plusieurs classes dans la liste
                     </p>
                   </ng-template>
                 </div>
@@ -576,7 +611,7 @@
             <button type="button"
                     class="btn btn-outline-primary me-2"
                     (click)="previewAttribution()"
-                    [disabled]="!enseignement.enseignantId || !enseignement.matiereId || !enseignement.classeId || isLoading">
+                    [disabled]="!enseignement.enseignantId || !enseignement.matiereId || selectedClasses.length === 0 || isLoading">
               <i class="bi bi-eye me-1"></i>
               Aperçu détaillé
             </button>
@@ -588,7 +623,7 @@
                       'btn-warning': !isMatiereDeEnseignant(enseignement.matiereId) && enseignement.matiereId,
                       'btn-primary': !enseignement.matiereId
                     }"
-                    [disabled]="!enseignementForm.form.valid || isLoading">
+                    [disabled]="!enseignementForm.form.valid || isLoading || selectedClasses.length === 0">
               <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
               <i class="bi" [ngClass]="{
                 'bi-check-circle-fill': isMatiereDeEnseignant(enseignement.matiereId),
@@ -596,9 +631,8 @@
                 'bi-plus-circle': !enseignement.matiereId
               }" class="me-1"></i>
               {{ isEditMode ? 'Mettre à jour' : "Valider l'attribution" }}
-              <span *ngIf="!isMatiereDeEnseignant(enseignement.matiereId) && enseignement.matiereId" 
-                    class="ms-1 badge bg-light text-dark">
-                Hors spécialité
+              <span *ngIf="selectedClasses.length > 0" class="ms-2 badge bg-light text-dark">
+                {{ selectedClasses.length }} classe(s)
               </span>
             </button>
           </div>
