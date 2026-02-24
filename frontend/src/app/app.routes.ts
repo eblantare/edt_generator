@@ -10,6 +10,13 @@ export const routes: Routes = [
       .then(m => m.ConnexionComponent)
   },
 
+  // Page d'inscription (publique) - AJOUTÉE
+  {
+    path: 'inscription',
+    loadComponent: () => import('./components/inscription/inscription.component')
+      .then(m => m.InscriptionComponent)
+  },
+
   // Enseignants (protégé)
   {
     path: 'enseignants',

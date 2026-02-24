@@ -17,7 +17,7 @@ import { NotificationService } from '../../services/notification.service';
           <div class="col-md-6 col-lg-5">
             <!-- Logo / Brand -->
             <div class="text-center mb-4">
-              <div class="brand-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+              <div class="brand-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                    style="width: 80px; height: 80px;">
                 <i class="bi bi-calendar-week fs-1"></i>
               </div>
@@ -39,7 +39,7 @@ import { NotificationService } from '../../services/notification.service';
                   </small>
                 </div>
                 <div class="progress" style="height: 4px;">
-                  <div class="progress-bar bg-primary" 
+                  <div class="progress-bar bg-primary"
                        [style.width]="etape === 1 ? '50%' : '100%'"
                        role="progressbar"></div>
                 </div>
@@ -49,7 +49,7 @@ import { NotificationService } from '../../services/notification.service';
                 <!-- Étape 1: Email -->
                 <div *ngIf="etape === 1">
                   <div class="text-center mb-4">
-                    <div class="feature-icon bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                    <div class="feature-icon bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                          style="width: 60px; height: 60px;">
                       <i class="bi bi-envelope fs-2"></i>
                     </div>
@@ -93,7 +93,7 @@ import { NotificationService } from '../../services/notification.service';
                 <!-- Étape 2: Validation du code -->
                 <div *ngIf="etape === 2">
                   <div class="text-center mb-4">
-                    <div class="feature-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                    <div class="feature-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                          style="width: 60px; height: 60px;">
                       <i class="bi bi-shield-lock fs-2"></i>
                     </div>
@@ -265,6 +265,18 @@ export class ConnexionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Vérifier si on vient de l'inscription avec des données
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation && navigation.extras.state) {
+      const state = navigation.extras.state as any;
+      if (state.utilisateurId && state.email) {
+        this.utilisateurId = state.utilisateurId;
+        this.email = state.email;
+        this.etape = 2;
+        this.cdr.detectChanges();
+      }
+    }
+
     if (this.authService.estConnecte()) {
       this.router.navigate(['/generation']);
     }
@@ -279,16 +291,47 @@ export class ConnexionComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
+    // Étape 1: Vérifier si l'email existe
+    this.authService.verifierEmail(this.email).subscribe({
+      next: (verification) => {
+        if (!verification.success) {
+          this.loading = false;
+          this.errorMessage = verification.message;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        if (verification.existe) {
+          // Email existant → connexion normale
+          this.connexionExistante();
+        } else {
+          // Nouvel email → redirection vers inscription
+          this.loading = false;
+          console.log('🔀 Redirection vers inscription avec email:', this.email);
+          this.router.navigate(['/inscription'], {
+            state: { email: this.email }
+          });
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        this.errorMessage = error.message || 'Erreur de vérification';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private connexionExistante() {
     this.authService.demanderConnexion(this.email).subscribe({
       next: (result) => {
         this.loading = false;
-        
+
         if (result.utilisateurId) {
           this.utilisateurId = result.utilisateurId;
           this.etape = 2;
           this.cdr.detectChanges();
           this.notificationService.showSuccess('📧 Code envoyé à ' + this.email);
-          
+
           if (!result.success) {
             this.notificationService.showInfo('Code déjà existant - utilisez le dernier code reçu');
           }
@@ -299,7 +342,7 @@ export class ConnexionComponent implements OnInit {
       },
       error: (error) => {
         this.loading = false;
-        
+
         if (error.error && error.error.utilisateurId) {
           this.utilisateurId = error.error.utilisateurId;
           this.etape = 2;
@@ -338,11 +381,11 @@ export class ConnexionComponent implements OnInit {
       error: (error) => {
         this.loading = false;
         this.errorMessage = error.message || 'Erreur de validation';
-        
+
         if (error.error && error.error.message) {
           this.errorMessage = error.error.message;
         }
-        
+
         this.cdr.detectChanges();
         this.notificationService.showError(this.errorMessage);
       }

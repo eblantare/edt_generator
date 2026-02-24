@@ -36,6 +36,30 @@ export interface UtilisateurInfo {
   role: string;
 }
 
+// AJOUT: Interfaces pour la vérification d'email et l'inscription
+export interface VerificationEmail {
+  email: string;
+}
+
+export interface VerificationEmailResult {
+  success: boolean;
+  message: string;
+  existe: boolean;
+}
+
+export interface Inscription {
+  email: string;
+  role: string;
+  nom?: string;
+  prenom?: string;
+}
+
+export interface InscriptionResult {
+  success: boolean;
+  message: string;
+  utilisateurId?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -55,7 +79,27 @@ export class AuthService {
   }
 
   /**
-   * Étape 1: Demander un code de connexion (sans mot de passe)
+   * Vérifier si un email existe déjà
+   */
+  verifierEmail(email: string): Observable<VerificationEmailResult> {
+    const verification: VerificationEmail = { email };
+    return this.http.post<VerificationEmailResult>(`${this.apiUrl}/verifier-email`, verification).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Inscrire un nouvel utilisateur
+   */
+  inscrire(email: string, role: string = 'CONSULTANT'): Observable<InscriptionResult> {
+    const inscription: Inscription = { email, role };
+    return this.http.post<InscriptionResult>(`${this.apiUrl}/inscrire`, inscription).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Étape 1: Demander un code de connexion (pour utilisateur existant)
    */
   demanderConnexion(email: string): Observable<DemandeConnexionResult> {
     const demande: DemandeConnexion = { email };
