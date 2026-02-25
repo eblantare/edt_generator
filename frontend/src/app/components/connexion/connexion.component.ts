@@ -285,8 +285,20 @@ export class ConnexionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Vérifier si on vient de l'inscription avec des données
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation && navigation.extras.state) {
+      const state = navigation.extras.state as any;
+      if (state.utilisateurId && state.email) {
+        this.utilisateurId = state.utilisateurId;
+        this.email = state.email;
+        this.etape = 2;
+        this.cdr.detectChanges();
+      }
+    }
+
     if (this.authService.estConnecte()) {
-      this.router.navigate(['/classes']); // MODIFIÉ: rediriger vers classes au lieu de generation
+      this.router.navigate(['/classes']);
     }
   }
 
@@ -328,8 +340,6 @@ export class ConnexionComponent implements OnInit {
         this.ngZone.run(() => {
           this.loading = false;
           console.error('❌ Erreur demande de code:', error);
-
-          // En cas d'erreur technique, on affiche un message
           this.errorMessage = error.message || 'Erreur de connexion au serveur';
           this.cdr.detectChanges();
           this.notificationService.showError(this.errorMessage);
@@ -354,7 +364,6 @@ export class ConnexionComponent implements OnInit {
           this.loading = false;
           if (result.success) {
             this.notificationService.showSuccess('✨ Connexion réussie !');
-            // MODIFICATION ICI: rediriger vers la liste des classes
             this.router.navigate(['/classes']).then(() => {
               console.log('✅ Redirection vers la liste des classes réussie');
             }).catch(err => {
@@ -371,11 +380,9 @@ export class ConnexionComponent implements OnInit {
         this.ngZone.run(() => {
           this.loading = false;
           this.errorMessage = error.message || 'Erreur de validation';
-
           if (error.error && error.error.message) {
             this.errorMessage = error.error.message;
           }
-
           this.cdr.detectChanges();
           this.notificationService.showError(this.errorMessage);
         });
@@ -396,7 +403,6 @@ export class ConnexionComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Méthode pour aller vers l'inscription
   allerVersInscription() {
     console.log('👤 Redirection vers inscription avec email:', this.email);
     this.ngZone.run(() => {

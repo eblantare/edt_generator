@@ -26,18 +26,41 @@ public class AuthController {
     public ResponseEntity<DemandeConnexionResultDTO> demanderConnexion(@RequestBody DemandeConnexionDTO demande) {
         try {
             DemandeConnexionResultDTO result = authService.demanderConnexion(demande.getEmail());
-            
-            // IMPORTANT: On retourne TOUJOURS 200 avec le résultat
-            // Même si success=false, on veut que le frontend reçoive la réponse
             return ResponseEntity.ok(result);
-            
         } catch (Exception e) {
-            // En cas d'erreur technique, on retourne quand même un DTO avec success=false
             DemandeConnexionResultDTO errorResult = new DemandeConnexionResultDTO(
                 false, 
                 "Erreur serveur: " + e.getMessage()
             );
-            return ResponseEntity.ok(errorResult); // 200 au lieu de 400
+            return ResponseEntity.ok(errorResult);
+        }
+    }
+    
+    @PostMapping("/verifier-email")
+    public ResponseEntity<VerificationEmailResultDTO> verifierEmail(@RequestBody VerificationEmailDTO verification) {
+        try {
+            VerificationEmailResultDTO result = authService.verifierEmail(verification.getEmail());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            VerificationEmailResultDTO errorResult = new VerificationEmailResultDTO(
+                false, 
+                "Erreur serveur: " + e.getMessage()
+            );
+            return ResponseEntity.ok(errorResult);
+        }
+    }
+    
+    @PostMapping("/inscrire")
+    public ResponseEntity<InscriptionResultDTO> inscrire(@RequestBody InscriptionDTO inscription) {
+        try {
+            InscriptionResultDTO result = authService.inscrire(inscription);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            InscriptionResultDTO errorResult = new InscriptionResultDTO(
+                false, 
+                "Erreur serveur: " + e.getMessage()
+            );
+            return ResponseEntity.ok(errorResult);
         }
     }
     
@@ -48,10 +71,7 @@ public class AuthController {
                 validation.getUtilisateurId(),
                 validation.getCode()
             );
-            
-            // Toujours 200
             return ResponseEntity.ok(result);
-            
         } catch (Exception e) {
             ValidationCodeResultDTO errorResult = new ValidationCodeResultDTO(
                 false, 

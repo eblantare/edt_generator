@@ -51,11 +51,11 @@ import { HttpErrorResponse } from '@angular/common/http';
                   <!-- Email -->
                   <div class="mb-3">
                     <label class="form-label fw-semibold">Email</label>
-                    <input type="email"
-                           class="form-control"
-                           [(ngModel)]="email"
+                    <input type="email" 
+                           class="form-control" 
+                           [(ngModel)]="email" 
                            name="email"
-                           [readonly]="!!email"
+                           [readonly]="!!email" 
                            [disabled]="!!email"
                            placeholder="votre@email.com"
                            required>
@@ -163,13 +163,12 @@ export class InscriptionComponent implements OnInit {
     this.authService.inscrire(this.email, this.role).subscribe({
       next: (result: InscriptionResult) => {
         this.loading = false;
-        // CHANGEMENT ICI: utilisateurId -> userId pour correspondre au DTO backend
+        // On utilise userId car le DTO backend utilise userId
         if (result.success && result.userId) {
           this.notificationService.showSuccess('Compte créé avec succès !');
           this.router.navigate(['/connexion'], {
             state: {
-              // On garde utilisateurId pour la cohérence avec le composant de connexion
-              utilisateurId: result.userId,
+              utilisateurId: result.userId, // Conversion pour la navigation
               email: this.email
             }
           });
@@ -180,7 +179,7 @@ export class InscriptionComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.loading = false;
         console.error('❌ Erreur inscription:', error);
-
+        
         if (error.status === 0) {
           this.errorMessage = 'Serveur inaccessible. Vérifiez que le backend est démarré.';
         } else if (error.status === 409) {

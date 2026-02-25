@@ -1,4 +1,3 @@
-// C:\projets\java\edt-generator\backend\src\main\java\com\edt\dtos\InscriptionResultDTO.java
 package com.edt.dtos;
 
 public class InscriptionResultDTO {

@@ -207,4 +207,71 @@ public class AuthService {
         
         return code.toString();
     }
+
+    /**
+     * Vérifier si un email existe déjà
+     */
+    public VerificationEmailResultDTO verifierEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return new VerificationEmailResultDTO(false, "Email requis");
+        }
+    
+        System.out.println("🔍 Vérification email: " + email);
+    
+        boolean existe = utilisateurRepository.existsByEmail(email);
+    
+        return new VerificationEmailResultDTO(
+            true, 
+            existe ? "Email existant" : "Email disponible",
+            existe
+        );
+    }
+
+    /**
+     * Inscrire un nouvel utilisateur
+     */
+    public InscriptionResultDTO inscrire(InscriptionDTO inscription) {
+        if (inscription.getEmail() == null || inscription.getEmail().trim().isEmpty()) {
+            return new InscriptionResultDTO(false, "Email requis");
+        }
+        
+        System.out.println("📝 Inscription nouvel utilisateur: " + inscription.getEmail());
+        
+        // Vérifier si l'email existe déjà
+        if (utilisateurRepository.existsByEmail(inscription.getEmail())) {
+            return new InscriptionResultDTO(false, "Cet email est déjà utilisé");
+        }
+        
+        // Créer le nouvel utilisateur
+        Utilisateur utilisateur = new Utilisateur(inscription.getEmail());
+        utilisateur.setRole(inscription.getRole() != null ? inscription.getRole() : "CONSULTANT");
+        utilisateur.setEstActif(true);
+        
+        utilisateur = utilisateurRepository.save(utilisateur);
+        
+        // Générer un code de connexion
+        String code = genererCode();
+        System.out.println("📧 Code généré pour " + inscription.getEmail() + ": " + code);
+        
+        CodeConnexion codeConnexion = new CodeConnexion(utilisateur, code);
+        codeConnexion.setDateExpiration(LocalDateTime.now().plusMinutes(10));
+        codeConnexionRepository.save(codeConnexion);
+        codeConnexionRepository.flush();
+        
+        // Envoyer le code par email
+        emailService.envoyerCodeConnexion(utilisateur.getEmail(), code);
+        
+        return new InscriptionResultDTO(
+            true, 
+            "Inscription réussie. Code envoyé par email.",
+            utilisateur.getId()
+        );
+    }
+
+    /**
+     * Génère un token simple
+     */
+    private String genererToken(Utilisateur utilisateur) {
+        return "TOKEN_" + utilisateur.getId() + "_" + System.currentTimeMillis();
+    }
 }

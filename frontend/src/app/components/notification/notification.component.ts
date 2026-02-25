@@ -1,59 +1,66 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+// C:\projets\java\edt-generator\frontend\src\app\components\notification\notification.component.ts
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
   selector: 'app-notification',
-  templateUrl: './notification.component.html',
-  styleUrls: ['./notification.component.scss'],
   standalone: true,
-  imports: [CommonModule]
+  imports: [CommonModule],
+  templateUrl: './notification.component.html',
+  styleUrls: ['./notification.component.scss']
 })
 export class NotificationComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   private autoCloseSubscription?: Subscription;
   private notificationSubscription?: Subscription;
 
-  constructor(private notificationService: NotificationService) { }
+  constructor(
+    private notificationService: NotificationService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
-    // S'abonner aux notifications
     this.notificationSubscription = this.notificationService.getNotifications().subscribe(
       (notifications: Notification[]) => {
-        this.notifications = notifications;
-
-        // Démarrer la vérification automatique de fermeture
-        this.startAutoCloseCheck();
+        this.ngZone.run(() => {
+          this.notifications = notifications;
+          this.startAutoCloseCheck();
+        });
       }
     );
   }
 
   ngOnDestroy(): void {
-    // Nettoyer les abonnements
     this.autoCloseSubscription?.unsubscribe();
     this.notificationSubscription?.unsubscribe();
   }
 
   private startAutoCloseCheck(): void {
-    // Arrêter l'ancienne vérification si elle existe
     this.autoCloseSubscription?.unsubscribe();
 
-    // Vérifier toutes les 100ms pour des mises à jour fluides
-    this.autoCloseSubscription = interval(100).subscribe(() => {
-      const now = Date.now();
-      const notificationsToRemove: number[] = [];
+    // 🔴 SOLUTION: Intervalle plus long (300ms) pour réduire la fréquence
+    this.autoCloseSubscription = interval(300).subscribe(() => {
+      this.ngZone.run(() => {
+        const now = Date.now();
+        const notificationsToRemove: number[] = [];
 
-      this.notifications.forEach(notification => {
-        // Fermer automatiquement après 5 secondes (5000ms)
-        if (notification.autoClose && now - notification.timestamp > 5000) {
-          notificationsToRemove.push(notification.id);
+        this.notifications.forEach(notification => {
+          if (notification.autoClose && now - notification.timestamp > 5000) {
+            notificationsToRemove.push(notification.id);
+          }
+        });
+
+        if (notificationsToRemove.length > 0) {
+          notificationsToRemove.forEach(id => {
+            this.notificationService.removeNotification(id);
+          });
+        } else {
+          // 🔴 Forcer la détection uniquement si nécessaire
+          this.cdr.detectChanges();
         }
-      });
-
-      // Supprimer les notifications expirées
-      notificationsToRemove.forEach(id => {
-        this.closeNotification(id);
       });
     });
   }
@@ -78,17 +85,20 @@ export class NotificationComponent implements OnInit, OnDestroy {
     return icons[notification.type] || 'bi-info-circle-fill';
   }
 
+  // 🔴 SOLUTION: Arrondir à 1 décimale pour éviter les fluctuations (99.4 → 99.3)
   getProgressWidth(notification: Notification): number {
     if (!notification.autoClose) return 0;
 
     const elapsed = Date.now() - notification.timestamp;
-    const total = 5000; // 5 secondes
+    const total = 5000;
     const remaining = Math.max(0, total - elapsed);
-
-    return (remaining / total) * 100;
+    // Arrondir pour éviter les changements infimes
+    return Math.round((remaining / total) * 100 * 10) / 10;
   }
 
   closeNotification(id: number): void {
-    this.notificationService.removeNotification(id);
+    this.ngZone.run(() => {
+      this.notificationService.removeNotification(id);
+    });
   }
 }
