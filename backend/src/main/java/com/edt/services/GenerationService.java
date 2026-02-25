@@ -1,4 +1,3 @@
-// C:\projets\java\edt-generator\backend\src\main\java\com\edt\services\GenerationService.java
 package com.edt.services;
 
 import com.edt.dtos.*;
@@ -987,8 +986,46 @@ public class GenerationService {
         return statut;
     }
     
+    // ========== MÉTHODE DE SUPPRESSION CORRIGÉE ==========
+    
+    @Transactional
     public void deleteEmploiDuTemps(String id) {
-        emploiDuTempsRepository.deleteById(id);
+        System.out.println("\n" + "🗑️".repeat(40));
+        System.out.println("🗑️ SUPPRESSION DE L'EMPLOI: " + id);
+        System.out.println("🗑️".repeat(40));
+        
+        try {
+            // 1. Vérifier si l'emploi existe
+            EmploiDuTemps emploi = emploiDuTempsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Emploi du temps non trouvé: " + id));
+            
+            System.out.println("   📋 Emploi trouvé: " + emploi.getNom());
+            
+            // 2. Récupérer tous les créneaux associés
+            List<CreneauHoraire> creneaux = creneauHoraireRepository.findByEmploiDuTempsId(id);
+            System.out.println("   📅 Créneaux associés: " + creneaux.size());
+            
+            // 3. SUPPRIMER D'ABORD TOUS LES CRÉNEAUX
+            if (!creneaux.isEmpty()) {
+                System.out.println("   🗑️ Suppression des créneaux...");
+                creneauHoraireRepository.deleteAll(creneaux);
+                creneauHoraireRepository.flush(); // Forcer l'exécution immédiate
+                System.out.println("   ✅ Créneaux supprimés");
+            }
+            
+            // 4. ENSUITE SUPPRIMER L'EMPLOI DU TEMPS
+            System.out.println("   🗑️ Suppression de l'emploi...");
+            emploiDuTempsRepository.delete(emploi);
+            emploiDuTempsRepository.flush(); // Forcer l'exécution immédiate
+            
+            System.out.println("   ✅ SUPPRESSION TERMINÉE");
+            System.out.println("🗑️".repeat(40) + "\n");
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERREUR LORS DE LA SUPPRESSION: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de la suppression: " + e.getMessage(), e);
+        }
     }
     
     public List<String> getAnneesScolaires() {

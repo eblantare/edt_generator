@@ -1,5 +1,4 @@
-// C:\projets\java\edt-generator\frontend\src\app\components\connexion\connexion.component.ts
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,7 +16,7 @@ import { NotificationService } from '../../services/notification.service';
           <div class="col-md-6 col-lg-5">
             <!-- Logo / Brand -->
             <div class="text-center mb-4">
-              <div class="brand-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+              <div class="brand-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                    style="width: 80px; height: 80px;">
                 <i class="bi bi-calendar-week fs-1"></i>
               </div>
@@ -39,7 +38,7 @@ import { NotificationService } from '../../services/notification.service';
                   </small>
                 </div>
                 <div class="progress" style="height: 4px;">
-                  <div class="progress-bar bg-primary" 
+                  <div class="progress-bar bg-primary"
                        [style.width]="etape === 1 ? '50%' : '100%'"
                        role="progressbar"></div>
                 </div>
@@ -49,7 +48,7 @@ import { NotificationService } from '../../services/notification.service';
                 <!-- Étape 1: Email -->
                 <div *ngIf="etape === 1">
                   <div class="text-center mb-4">
-                    <div class="feature-icon bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                    <div class="feature-icon bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                          style="width: 60px; height: 60px;">
                       <i class="bi bi-envelope fs-2"></i>
                     </div>
@@ -88,12 +87,21 @@ import { NotificationService } from '../../services/notification.service';
                       Envoi en cours...
                     </span>
                   </button>
+
+                  <!-- BOUTON D'INSCRIPTION - TOUJOURS ACTIF -->
+                  <div class="text-center mt-3">
+                    <button class="btn btn-link text-decoration-none"
+                            (click)="allerVersInscription()">
+                      <i class="bi bi-person-plus me-1"></i>
+                      Pas encore de compte ? Inscrivez-vous
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Étape 2: Validation du code -->
                 <div *ngIf="etape === 2">
                   <div class="text-center mb-4">
-                    <div class="feature-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                    <div class="feature-icon bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                          style="width: 60px; height: 60px;">
                       <i class="bi bi-shield-lock fs-2"></i>
                     </div>
@@ -128,10 +136,12 @@ import { NotificationService } from '../../services/notification.service';
                         <i class="bi bi-123 me-1"></i>
                         7 à 9 chiffres
                       </small>
-                      <a href="#" class="text-decoration-none small" (click)="$event.preventDefault(); renvoyerCode()">
+                      <button class="btn btn-link text-decoration-none small p-0"
+                              (click)="renvoyerCode()"
+                              [disabled]="loading">
                         <i class="bi bi-arrow-repeat me-1"></i>
                         Renvoyer
-                      </a>
+                      </button>
                     </div>
                   </div>
 
@@ -167,10 +177,11 @@ import { NotificationService } from '../../services/notification.service';
 
             <!-- Badges de sécurité -->
             <div class="d-flex justify-content-center gap-3 mt-4">
-              <span class="badge bg-light text-dark rounded-pill px-3 py-2">
-                <i class="bi bi-shield-check text-success me-1"></i>
-                Chiffré
-              </span>
+              <button class="badge bg-light text-dark rounded-pill px-3 py-2 border-0"
+                      (click)="allerVersInscription()">
+                <i class="bi bi-person-plus text-success me-1"></i>
+                Nouveau compte
+              </button>
               <span class="badge bg-light text-dark rounded-pill px-3 py-2">
                 <i class="bi bi-clock-history text-primary me-1"></i>
                 Session 10min
@@ -247,6 +258,14 @@ import { NotificationService } from '../../services/notification.service';
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
     }
+    .badge {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .badge:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
   `]
 })
 export class ConnexionComponent implements OnInit {
@@ -261,12 +280,13 @@ export class ConnexionComponent implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit() {
     if (this.authService.estConnecte()) {
-      this.router.navigate(['/generation']);
+      this.router.navigate(['/classes']); // MODIFIÉ: rediriger vers classes au lieu de generation
     }
   }
 
@@ -278,38 +298,42 @@ export class ConnexionComponent implements OnInit {
 
     this.loading = true;
     this.errorMessage = '';
+    this.cdr.detectChanges();
 
     this.authService.demanderConnexion(this.email).subscribe({
       next: (result) => {
-        this.loading = false;
-        
-        if (result.utilisateurId) {
-          this.utilisateurId = result.utilisateurId;
-          this.etape = 2;
-          this.cdr.detectChanges();
-          this.notificationService.showSuccess('📧 Code envoyé à ' + this.email);
-          
-          if (!result.success) {
-            this.notificationService.showInfo('Code déjà existant - utilisez le dernier code reçu');
+        this.ngZone.run(() => {
+          this.loading = false;
+
+          if (result.success && result.utilisateurId) {
+            // Email trouvé → passer à l'étape 2
+            this.utilisateurId = result.utilisateurId;
+            this.etape = 2;
+            this.cdr.detectChanges();
+            this.notificationService.showSuccess('📧 Code envoyé à ' + this.email);
+          } else {
+            // Email non trouvé → rediriger vers l'inscription
+            console.log('📧 Email non trouvé, redirection vers inscription:', this.email);
+            this.router.navigate(['/inscription'], {
+              state: { email: this.email }
+            }).then(() => {
+              console.log('✅ Navigation vers inscription réussie');
+            }).catch(err => {
+              console.error('❌ Erreur navigation:', err);
+            });
           }
-        } else {
-          this.errorMessage = result.message || 'Email non reconnu';
-          this.cdr.detectChanges();
-        }
+        });
       },
       error: (error) => {
-        this.loading = false;
-        
-        if (error.error && error.error.utilisateurId) {
-          this.utilisateurId = error.error.utilisateurId;
-          this.etape = 2;
-          this.cdr.detectChanges();
-          this.notificationService.showSuccess('✅ Code disponible - vérifiez votre email');
-        } else {
+        this.ngZone.run(() => {
+          this.loading = false;
+          console.error('❌ Erreur demande de code:', error);
+
+          // En cas d'erreur technique, on affiche un message
           this.errorMessage = error.message || 'Erreur de connexion au serveur';
           this.cdr.detectChanges();
           this.notificationService.showError(this.errorMessage);
-        }
+        });
       }
     });
   }
@@ -322,29 +346,39 @@ export class ConnexionComponent implements OnInit {
 
     this.loading = true;
     this.errorMessage = '';
+    this.cdr.detectChanges();
 
     this.authService.validerCode(this.utilisateurId, this.code).subscribe({
       next: (result) => {
-        this.loading = false;
-        if (result.success) {
-          this.notificationService.showSuccess('✨ Connexion réussie !');
-          this.router.navigate(['/generation']);
-        } else {
-          this.errorMessage = result.message || 'Code invalide ou expiré';
-          this.cdr.detectChanges();
-          this.notificationService.showError(this.errorMessage);
-        }
+        this.ngZone.run(() => {
+          this.loading = false;
+          if (result.success) {
+            this.notificationService.showSuccess('✨ Connexion réussie !');
+            // MODIFICATION ICI: rediriger vers la liste des classes
+            this.router.navigate(['/classes']).then(() => {
+              console.log('✅ Redirection vers la liste des classes réussie');
+            }).catch(err => {
+              console.error('❌ Erreur redirection vers classes:', err);
+            });
+          } else {
+            this.errorMessage = result.message || 'Code invalide ou expiré';
+            this.cdr.detectChanges();
+            this.notificationService.showError(this.errorMessage);
+          }
+        });
       },
       error: (error) => {
-        this.loading = false;
-        this.errorMessage = error.message || 'Erreur de validation';
-        
-        if (error.error && error.error.message) {
-          this.errorMessage = error.error.message;
-        }
-        
-        this.cdr.detectChanges();
-        this.notificationService.showError(this.errorMessage);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.errorMessage = error.message || 'Erreur de validation';
+
+          if (error.error && error.error.message) {
+            this.errorMessage = error.error.message;
+          }
+
+          this.cdr.detectChanges();
+          this.notificationService.showError(this.errorMessage);
+        });
       }
     });
   }
@@ -360,6 +394,19 @@ export class ConnexionComponent implements OnInit {
     this.errorMessage = '';
     this.utilisateurId = '';
     this.cdr.detectChanges();
-    this.notificationService.showInfo('Modifiez votre email et recommencez');
+  }
+
+  // Méthode pour aller vers l'inscription
+  allerVersInscription() {
+    console.log('👤 Redirection vers inscription avec email:', this.email);
+    this.ngZone.run(() => {
+      this.router.navigate(['/inscription'], {
+        state: { email: this.email }
+      }).then(() => {
+        console.log('✅ Navigation vers inscription réussie');
+      }).catch(err => {
+        console.error('❌ Erreur navigation:', err);
+      });
+    });
   }
 }

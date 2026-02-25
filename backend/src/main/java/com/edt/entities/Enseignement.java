@@ -1,6 +1,9 @@
 package com.edt.entities;
 
 import javax.persistence.*;
+
+import org.hibernate.annotations.GenericGenerator;
+
 import java.util.UUID;
 
 @Entity
@@ -8,6 +11,12 @@ import java.util.UUID;
        uniqueConstraints = @UniqueConstraint(columnNames = {"enseignant_id", "classe_id", "matiere_id"}))
 public class Enseignement {
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
     private String id;
     
     @ManyToOne

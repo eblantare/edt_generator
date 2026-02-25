@@ -6,6 +6,13 @@ import { catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
+// Interface pour l'inscription (À AJOUTER)
+export interface InscriptionResult {
+  success: boolean;
+  message: string;
+  userId?: string;
+}
+
 export interface DemandeConnexion {
   email: string;
 }
@@ -52,6 +59,18 @@ export class AuthService {
     private router: Router
   ) {
     this.chargerUtilisateurStocke();
+  }
+
+  // === MÉTHODE D'INSCRIPTION À AJOUTER ===
+  inscrire(email: string, role: string = 'CONSULTANT'): Observable<InscriptionResult> {
+    return this.http.post<InscriptionResult>(`${this.apiUrl}/inscription`, { email, role }).pipe(
+      tap(result => {
+        if (result.success) {
+          console.log('✅ Inscription réussie pour:', email);
+        }
+      }),
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -165,6 +184,8 @@ export class AuthService {
       message = 'Serveur inaccessible. Vérifiez que le backend est démarré.';
     } else if (error.status === 404) {
       message = 'Email non trouvé';
+    } else if (error.status === 409) {
+      message = 'Cet email est déjà utilisé';
     }
 
     return throwError(() => new Error(message));

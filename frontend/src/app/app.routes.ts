@@ -1,4 +1,3 @@
-// C:\projets\java\edt-generator\frontend\src\app\app.routes.ts
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -8,6 +7,13 @@ export const routes: Routes = [
     path: 'connexion',
     loadComponent: () => import('./components/connexion/connexion.component')
       .then(m => m.ConnexionComponent)
+  },
+
+  // Page d'inscription (publique) - AJOUTÉE
+  {
+    path: 'inscription',
+    loadComponent: () => import('./components/inscription/inscription.component')
+      .then(m => m.InscriptionComponent)
   },
 
   // Enseignants (protégé)

@@ -2,6 +2,9 @@
 package com.edt.entities;
 
 import javax.persistence.*;
+
+import org.hibernate.annotations.GenericGenerator;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,6 +12,12 @@ import java.util.UUID;
 @Table(name = "utilisateurs")
 public class Utilisateur {
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
     private String id;
     
     @Column(unique = true, nullable = false)

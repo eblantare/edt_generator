@@ -1,12 +1,21 @@
 package com.edt.entities;
 
 import javax.persistence.*;
+
+import org.hibernate.annotations.GenericGenerator;
+
 import java.util.UUID;
 
 @Entity
 @Table(name = "matieres")
 public class Matiere {
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
     private String id;
     
     @Column(unique = true, nullable = false)

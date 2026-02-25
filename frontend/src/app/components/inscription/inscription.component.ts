@@ -1,4 +1,3 @@
-// C:\projets\java\edt-generator\frontend\src\app\components\inscription\inscription.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -164,11 +163,13 @@ export class InscriptionComponent implements OnInit {
     this.authService.inscrire(this.email, this.role).subscribe({
       next: (result: InscriptionResult) => {
         this.loading = false;
-        if (result.success && result.utilisateurId) {
+        // CHANGEMENT ICI: utilisateurId -> userId pour correspondre au DTO backend
+        if (result.success && result.userId) {
           this.notificationService.showSuccess('Compte créé avec succès !');
           this.router.navigate(['/connexion'], {
             state: {
-              utilisateurId: result.utilisateurId,
+              // On garde utilisateurId pour la cohérence avec le composant de connexion
+              utilisateurId: result.userId,
               email: this.email
             }
           });
