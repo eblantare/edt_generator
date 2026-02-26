@@ -6,7 +6,7 @@ import { catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
-// Interface pour l'inscription (À AJOUTER)
+// Interface pour l'inscription
 export interface InscriptionResult {
   success: boolean;
   message: string;
@@ -43,7 +43,7 @@ export interface UtilisateurInfo {
   role: string;
 }
 
-// AJOUT: Interfaces pour la vérification d'email et l'inscription
+// Interfaces pour la vérification d'email et l'inscription
 export interface VerificationEmail {
   email: string;
 }
@@ -59,12 +59,6 @@ export interface Inscription {
   role: string;
   nom?: string;
   prenom?: string;
-}
-
-export interface InscriptionResult {
-  success: boolean;
-  message: string;
-  utilisateurId?: string;
 }
 
 @Injectable({
@@ -85,9 +79,10 @@ export class AuthService {
     this.chargerUtilisateurStocke();
   }
 
-  // === MÉTHODE D'INSCRIPTION À AJOUTER ===
+  // ========== MÉTHODE D'INSCRIPTION (UNE SEULE FOIS) ==========
   inscrire(email: string, role: string = 'CONSULTANT'): Observable<InscriptionResult> {
-    return this.http.post<InscriptionResult>(`${this.apiUrl}/inscription`, { email, role }).pipe(
+    const inscription: Inscription = { email, role };
+    return this.http.post<InscriptionResult>(`${this.apiUrl}/inscrire`, inscription).pipe(
       tap(result => {
         if (result.success) {
           console.log('✅ Inscription réussie pour:', email);
@@ -103,16 +98,6 @@ export class AuthService {
   verifierEmail(email: string): Observable<VerificationEmailResult> {
     const verification: VerificationEmail = { email };
     return this.http.post<VerificationEmailResult>(`${this.apiUrl}/verifier-email`, verification).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Inscrire un nouvel utilisateur
-   */
-  inscrire(email: string, role: string = 'CONSULTANT'): Observable<InscriptionResult> {
-    const inscription: Inscription = { email, role };
-    return this.http.post<InscriptionResult>(`${this.apiUrl}/inscrire`, inscription).pipe(
       catchError(this.handleError)
     );
   }
