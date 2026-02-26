@@ -37,8 +37,8 @@ import { HttpErrorResponse } from '@angular/common/http';
               <div class="card-body p-4">
                 <form (ngSubmit)="onSubmit()" #inscriptionForm="ngForm">
                   <div class="text-center mb-4">
-                    <p class="text-muted" *ngIf="email; else noEmail">
-                      L'email <strong>{{ email }}</strong> n'est pas reconnu.<br>
+                    <p class="text-muted" *ngIf="emailFromNavigation; else noEmail">
+                      L'email <strong>{{ emailFromNavigation }}</strong> n'est pas reconnu.<br>
                       Complétez votre inscription pour recevoir un code.
                     </p>
                     <ng-template #noEmail>
@@ -55,11 +55,11 @@ import { HttpErrorResponse } from '@angular/common/http';
                            class="form-control" 
                            [(ngModel)]="email" 
                            name="email"
-                           [readonly]="!!email" 
-                           [disabled]="!!email"
+                           [readonly]="!!emailFromNavigation" 
+                           [disabled]="!!emailFromNavigation"
                            placeholder="votre@email.com"
                            required>
-                    <small class="text-muted" *ngIf="!email">
+                    <small class="text-muted" *ngIf="!emailFromNavigation">
                       Saisissez votre email pour créer un compte
                     </small>
                   </div>
@@ -122,6 +122,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class InscriptionComponent implements OnInit {
   email = '';
+  emailFromNavigation = '';
   role = 'CONSULTANT';
   loading = false;
   errorMessage = '';
@@ -137,8 +138,9 @@ export class InscriptionComponent implements OnInit {
     const navigation = this.router.getCurrentNavigation();
     if (navigation && navigation.extras.state) {
       const state = navigation.extras.state as { [key: string]: any };
-      this.email = state['email'] || '';
-      console.log('📧 Email reçu pour inscription:', this.email);
+      this.emailFromNavigation = state['email'] || '';
+      this.email = this.emailFromNavigation;
+      console.log('📧 Email reçu pour inscription:', this.emailFromNavigation);
     }
 
     // 🔴 SÉCURITÉ: Forcer loading à false après 5 secondes
