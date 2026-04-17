@@ -1,11 +1,8 @@
 package com.edt.services;
 
 import com.edt.dtos.EnseignantDTO;
-import com.edt.dtos.MatiereDTO;
-import com.edt.entities.Enseignant;
-import com.edt.entities.Matiere;
-import com.edt.repository.EnseignantRepository;
-import com.edt.repository.MatiereRepository;
+import com.edt.entities.*;
+import com.edt.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,7 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -24,196 +23,136 @@ public class EnseignantService {
     private EnseignantRepository enseignantRepository;
     
     @Autowired
+    private EnseignementRepository enseignementRepository;
+    
+    @Autowired
     private MatiereRepository matiereRepository;
     
-    public Page<EnseignantDTO> getAllEnseignants(int page, int size, String search, 
-                                                 String sortBy, String sortDirection) {
-        
-        System.out.println("📊 SERVICE - Paramètres reçus:");
-        System.out.println("  page: " + page);
-        System.out.println("  size: " + size);
-        System.out.println("  search: " + search);
-        System.out.println("  sortBy: " + sortBy);
-        System.out.println("  sortDirection: " + sortDirection);
-        
-        Pageable pageable = PageRequest.of(page, size, 
-            Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
-        
-        Page<Enseignant> enseignantsPage;
-        
-        if (search != null && !search.trim().isEmpty()) {
-            enseignantsPage = enseignantRepository.findBySearch(search.toLowerCase(), pageable);
-        } else {
-            enseignantsPage = enseignantRepository.findAll(pageable);
-        }
-        
-        System.out.println("✅ Nombre d'enseignants trouvés: " + enseignantsPage.getContent().size());
-        
-        return enseignantsPage.map(this::convertToDTO);
-    }
+    // === CRUD OPERATIONS ===
     
-    public EnseignantDTO getEnseignantById(String id) {
-        System.out.println("🔍 Recherche enseignant avec ID: " + id);
-        
-        Enseignant enseignant = enseignantRepository.findById(id)
-            .orElseThrow(() -> {
-                System.out.println("❌ Enseignant non trouvé avec ID: " + id);
-                return new RuntimeException("Enseignant non trouvé");
-            });
-        
-        System.out.println("✅ Enseignant trouvé: " + enseignant.getNom() + " " + enseignant.getPrenom());
-        return convertToDTO(enseignant);
-    }
-    
-    public EnseignantDTO createEnseignant(EnseignantDTO enseignantDTO) {
-        System.out.println("➕ Création nouvel enseignant: " + enseignantDTO.getNom());
-        System.out.println("📋 Données reçues:");
-        System.out.println("  - Matière dominante ID: " + (enseignantDTO.getMatiereDominante() != null ? enseignantDTO.getMatiereDominante().getId() : "null"));
-        System.out.println("  - Matière secondaire ID: " + (enseignantDTO.getMatiereSecondaire() != null ? enseignantDTO.getMatiereSecondaire().getId() : "null"));
-        
+    public EnseignantDTO createEnseignant(EnseignantDTO dto) {
         // Vérifier si le matricule existe déjà
-        Enseignant existing = enseignantRepository.findByMatricule(enseignantDTO.getMatricule());
-        if (existing != null) {
-            System.out.println("❌ Matricule déjà utilisé: " + enseignantDTO.getMatricule());
+        Optional<Enseignant> existing = enseignantRepository.findByMatricule(dto.getMatricule());
+        if (existing.isPresent()) {
             throw new RuntimeException("Un enseignant avec ce matricule existe déjà");
         }
         
         Enseignant enseignant = new Enseignant();
-        enseignant.setNom(enseignantDTO.getNom());
-        enseignant.setPrenom(enseignantDTO.getPrenom());
-        enseignant.setMatricule(enseignantDTO.getMatricule());
-        enseignant.setEmail(enseignantDTO.getEmail());
-        enseignant.setTelephone(enseignantDTO.getTelephone());
-        enseignant.setHeuresMaxHebdo(enseignantDTO.getHeuresMaxHebdo());
+        enseignant.setMatricule(dto.getMatricule());
+        enseignant.setNom(dto.getNom());
+        enseignant.setPrenom(dto.getPrenom());
+        enseignant.setTelephone(dto.getTelephone());
+        enseignant.setEmail(dto.getEmail());
+        enseignant.setHeuresMaxHebdo(dto.getHeuresMaxHebdo() != null ? dto.getHeuresMaxHebdo() : 24);
         
-        // ⭐⭐ AJOUT CRITIQUE : GESTION DES MATIÈRES DIRECTES ⭐⭐
-        if (enseignantDTO.getMatiereDominante() != null && enseignantDTO.getMatiereDominante().getId() != null) {
-            Matiere matiereDom = matiereRepository.findById(enseignantDTO.getMatiereDominante().getId())
-                .orElse(null);
-            if (matiereDom != null) {
-                enseignant.setMatiereDominante(matiereDom);
-                System.out.println("✅ Matière dominante associée: " + matiereDom.getNom());
-            } else {
-                System.out.println("⚠️ Matière dominante non trouvée avec ID: " + enseignantDTO.getMatiereDominante().getId());
-            }
+        // ✅ Gestion des matières
+        if (dto.getMatiereDominanteId() != null && !dto.getMatiereDominanteId().isEmpty()) {
+            matiereRepository.findById(dto.getMatiereDominanteId())
+                .ifPresent(enseignant::setMatiereDominante);
         }
         
-        if (enseignantDTO.getMatiereSecondaire() != null && enseignantDTO.getMatiereSecondaire().getId() != null) {
-            Matiere matiereSec = matiereRepository.findById(enseignantDTO.getMatiereSecondaire().getId())
-                .orElse(null);
-            if (matiereSec != null) {
-                enseignant.setMatiereSecondaire(matiereSec);
-                System.out.println("✅ Matière secondaire associée: " + matiereSec.getNom());
-            } else {
-                System.out.println("⚠️ Matière secondaire non trouvée avec ID: " + enseignantDTO.getMatiereSecondaire().getId());
-            }
+        if (dto.getMatiereSecondaireId() != null && !dto.getMatiereSecondaireId().isEmpty()) {
+            matiereRepository.findById(dto.getMatiereSecondaireId())
+                .ifPresent(enseignant::setMatiereSecondaire);
         }
         
-        enseignant = enseignantRepository.save(enseignant);
-        System.out.println("✅ Enseignant créé avec ID: " + enseignant.getId());
-        
-        return convertToDTO(enseignant);
+        Enseignant saved = enseignantRepository.save(enseignant);
+        return convertToDTO(saved);
     }
     
-    public EnseignantDTO updateEnseignant(String id, EnseignantDTO enseignantDTO) {
-        System.out.println("✏️ Mise à jour enseignant ID: " + id);
-        System.out.println("📋 Données reçues:");
-        System.out.println("  - Matière dominante ID: " + (enseignantDTO.getMatiereDominante() != null ? enseignantDTO.getMatiereDominante().getId() : "null"));
-        System.out.println("  - Matière secondaire ID: " + (enseignantDTO.getMatiereSecondaire() != null ? enseignantDTO.getMatiereSecondaire().getId() : "null"));
-        
+    public EnseignantDTO updateEnseignant(String id, EnseignantDTO dto) {
         Enseignant enseignant = enseignantRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Enseignant non trouvé"));
         
-        // Vérifier si le nouveau matricule est utilisé par un autre enseignant
-        if (!enseignant.getMatricule().equals(enseignantDTO.getMatricule())) {
-            Enseignant existing = enseignantRepository.findByMatricule(enseignantDTO.getMatricule());
-            if (existing != null && !existing.getId().equals(id)) {
-                System.out.println("❌ Matricule déjà utilisé par un autre enseignant: " + enseignantDTO.getMatricule());
-                throw new RuntimeException("Ce matricule est déjà utilisé par un autre enseignant");
-            }
-        }
+        enseignant.setNom(dto.getNom());
+        enseignant.setPrenom(dto.getPrenom());
+        enseignant.setTelephone(dto.getTelephone());
+        enseignant.setEmail(dto.getEmail());
+        enseignant.setHeuresMaxHebdo(dto.getHeuresMaxHebdo());
         
-        enseignant.setNom(enseignantDTO.getNom());
-        enseignant.setPrenom(enseignantDTO.getPrenom());
-        enseignant.setMatricule(enseignantDTO.getMatricule());
-        enseignant.setEmail(enseignantDTO.getEmail());
-        enseignant.setTelephone(enseignantDTO.getTelephone());
-        enseignant.setHeuresMaxHebdo(enseignantDTO.getHeuresMaxHebdo());
-        
-        // ⭐⭐ AJOUT CRITIQUE : GESTION DES MATIÈRES DIRECTES ⭐⭐
-        // Matière dominante
-        if (enseignantDTO.getMatiereDominante() != null && enseignantDTO.getMatiereDominante().getId() != null) {
-            Matiere matiereDom = matiereRepository.findById(enseignantDTO.getMatiereDominante().getId())
-                .orElse(null);
-            enseignant.setMatiereDominante(matiereDom);
-            System.out.println("✅ Matière dominante mise à jour: " + (matiereDom != null ? matiereDom.getNom() : "null"));
+        // ✅ Mise à jour des matières
+        if (dto.getMatiereDominanteId() != null && !dto.getMatiereDominanteId().isEmpty()) {
+            matiereRepository.findById(dto.getMatiereDominanteId())
+                .ifPresent(enseignant::setMatiereDominante);
         } else {
             enseignant.setMatiereDominante(null);
-            System.out.println("✅ Matière dominante effacée");
         }
         
-        // Matière secondaire
-        if (enseignantDTO.getMatiereSecondaire() != null && enseignantDTO.getMatiereSecondaire().getId() != null) {
-            Matiere matiereSec = matiereRepository.findById(enseignantDTO.getMatiereSecondaire().getId())
-                .orElse(null);
-            enseignant.setMatiereSecondaire(matiereSec);
-            System.out.println("✅ Matière secondaire mise à jour: " + (matiereSec != null ? matiereSec.getNom() : "null"));
+        if (dto.getMatiereSecondaireId() != null && !dto.getMatiereSecondaireId().isEmpty()) {
+            matiereRepository.findById(dto.getMatiereSecondaireId())
+                .ifPresent(enseignant::setMatiereSecondaire);
         } else {
             enseignant.setMatiereSecondaire(null);
-            System.out.println("✅ Matière secondaire effacée");
         }
         
-        enseignant = enseignantRepository.save(enseignant);
-        System.out.println("✅ Enseignant mis à jour: " + enseignant.getNom());
-        
-        return convertToDTO(enseignant);
+        Enseignant saved = enseignantRepository.save(enseignant);
+        return convertToDTO(saved);
     }
     
     public void deleteEnseignant(String id) {
-        System.out.println("🗑️ Suppression enseignant ID: " + id);
         enseignantRepository.deleteById(id);
-        System.out.println("✅ Enseignant supprimé");
     }
     
-    private EnseignantDTO convertToDTO(Enseignant enseignant) {
-        System.out.println("🔄 Conversion Enseignant -> DTO: " + enseignant.getNom());
+    public EnseignantDTO getEnseignantById(String id) {
+        return enseignantRepository.findById(id)
+            .map(this::convertToDTO)
+            .orElseThrow(() -> new RuntimeException("Enseignant non trouvé"));
+    }
+    
+    // === LIST OPERATIONS ===
+    
+    public Page<EnseignantDTO> getAllEnseignants(int page, int size, String search, String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
         
+        Page<Enseignant> enseignants;
+        if (search != null && !search.trim().isEmpty()) {
+            enseignants = enseignantRepository.findBySearch(search.toLowerCase(), pageable);
+        } else {
+            enseignants = enseignantRepository.findAll(pageable);
+        }
+        
+        return enseignants.map(this::convertToDTO);
+    }
+    
+    public List<EnseignantDTO> getAllEnseignantsSimple() {
+        return enseignantRepository.findAll()
+            .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+    
+    // === STATISTIQUES ===
+    
+    public Integer getTotalHeuresParSemaine(String enseignantId) {
+        List<Enseignement> enseignements = enseignementRepository.findByEnseignantId(enseignantId);
+        return enseignements.stream()
+            .mapToInt(Enseignement::getHeuresParSemaine)
+            .sum();
+    }
+    
+    // === CONVERSION ===
+    
+    private EnseignantDTO convertToDTO(Enseignant enseignant) {
         EnseignantDTO dto = new EnseignantDTO();
         dto.setId(enseignant.getId());
+        dto.setMatricule(enseignant.getMatricule());
         dto.setNom(enseignant.getNom());
         dto.setPrenom(enseignant.getPrenom());
-        dto.setMatricule(enseignant.getMatricule());
-        dto.setEmail(enseignant.getEmail());
         dto.setTelephone(enseignant.getTelephone());
+        dto.setEmail(enseignant.getEmail());
         dto.setHeuresMaxHebdo(enseignant.getHeuresMaxHebdo());
         
-        // ⭐⭐ AJOUT CRITIQUE : CONVERSION DES MATIÈRES DIRECTES ⭐⭐
+        // ✅ Ajouter les matières au DTO
         if (enseignant.getMatiereDominante() != null) {
-            dto.setMatiereDominante(convertMatiereToDTO(enseignant.getMatiereDominante()));
-            System.out.println("⭐ Matière dominante: " + enseignant.getMatiereDominante().getNom());
-        } else {
-            System.out.println("ℹ️ Pas de matière dominante définie");
+            dto.setMatiereDominante(enseignant.getMatiereDominante());
+            dto.setMatiereDominanteId(enseignant.getMatiereDominante().getId());
         }
         
         if (enseignant.getMatiereSecondaire() != null) {
-            dto.setMatiereSecondaire(convertMatiereToDTO(enseignant.getMatiereSecondaire()));
-            System.out.println("📘 Matière secondaire: " + enseignant.getMatiereSecondaire().getNom());
-        } else {
-            System.out.println("ℹ️ Pas de matière secondaire définie");
+            dto.setMatiereSecondaire(enseignant.getMatiereSecondaire());
+            dto.setMatiereSecondaireId(enseignant.getMatiereSecondaire().getId());
         }
-        
-        return dto;
-    }
-    
-    private MatiereDTO convertMatiereToDTO(Matiere matiere) {
-        if (matiere == null) return null;
-        
-        MatiereDTO dto = new MatiereDTO();
-        dto.setId(matiere.getId());
-        dto.setCode(matiere.getCode());
-        dto.setNom(matiere.getNom());
-        dto.setCycle(matiere.getCycle());
-        dto.setNiveauClasse(matiere.getNiveauClasse());
         
         return dto;
     }

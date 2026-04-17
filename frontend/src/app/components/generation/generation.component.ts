@@ -281,8 +281,8 @@ import { NotificationService } from '../../services/notification.service';
                         <tr *ngFor="let item of historique">
                           <td>{{ formatDate(item.dateGeneration) }}</td>
                           <td>
-                            <span class="badge" [ngClass]="getTypeBadgeClass(item.type || detecterType(item.nom))">
-                              {{ item.type || detecterType(item.nom) }}
+                            <span class="badge" [ngClass]="getTypeBadgeClass(item.type)">
+                              {{ item.type || 'Global' }}
                             </span>
                           </td>
                           <td>{{ item.nom }}</td>
@@ -316,13 +316,29 @@ import { NotificationService } from '../../services/notification.service';
                                       [disabled]="item.statut !== 'TERMINE'">
                                 <i class="bi bi-file-excel"></i>
                               </button>
-                              <!-- NOUVEAU BOUTON SUPPRIMER -->
+                              <!-- Bouton PDF Enseignant (visible uniquement pour les emplois de type ENSEIGNANT) -->
+                              <button class="btn btn-outline-purple"
+                                      title="PDF Toutes classes"
+                                      (click)="exportPDFEnseignantToutesClasses(item.enseignantId, item.nom, anneeScolaire)"
+                                      [disabled]="item.statut !== 'TERMINE' || item.type !== 'ENSEIGNANT'"
+                                      *ngIf="item.type === 'ENSEIGNANT' && item.enseignantId">
+                                <i class="bi bi-person-workspace"></i> Toutes classes
+                              </button>
+
+                              <button class="btn btn-outline-info"
+                                 title="PDF Enseignant (Formaté)"
+                                 (click)="exportPDFEnseignantFormatte(item.enseignantId, item.nom, anneeScolaire)"
+                                 [disabled]="item.statut !== 'TERMINE' || item.type !== 'ENSEIGNANT'"
+                                 *ngIf="item.type === 'ENSEIGNANT' && item.enseignantId">
+                                 <i class="bi bi-table"></i> Formaté
+                              </button>
+                              <!-- Bouton Supprimer -->
                               <button class="btn btn-outline-danger"
-                                title="Supprimer"
-                                (click)="supprimerEmploi(item.id, item.nom)"
-                                [disabled]="isDeleting">
-                               <i class="bi bi-trash"></i>
-                            </button>
+                                      title="Supprimer"
+                                      (click)="supprimerEmploi(item.id, item.nom)"
+                                      [disabled]="isDeleting">
+                                <i class="bi bi-trash"></i>
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -368,18 +384,18 @@ export class GenerationComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-  this.utiliserAnneeCourante();
-  this.loadClasses();
-  this.loadEnseignants();
+    this.utiliserAnneeCourante();
+    this.loadClasses();
+    this.loadEnseignants();
 
-  // Maintenant .subscribe() fonctionne car loadHistorique() retourne un Observable
-  this.loadHistorique().subscribe({
-    next: () => console.log('Historique chargé'),
-    error: (err) => console.error('Erreur chargement historique', err)
-  });
+    // Maintenant .subscribe() fonctionne car loadHistorique() retourne un Observable
+    this.loadHistorique().subscribe({
+      next: () => console.log('Historique chargé'),
+      error: (err) => console.error('Erreur chargement historique', err)
+    });
 
-  this.executerDiagnostic();
-}
+    this.executerDiagnostic();
+  }
 
   utiliserAnneeCourante() {
     this.anneeScolaire = this.generationService.genererAnneeScolaireCourante();
@@ -427,22 +443,22 @@ export class GenerationComponent implements OnInit {
     });
   }
 
-  loadHistorique(): Observable<any> {  // ← AJOUTER LE TYPE DE RETOUR
-  return this.generationService.getHistoriqueGenerations().pipe(
-    tap((data: any) => {
-      if (Array.isArray(data)) {
-        this.historique = data;
-      } else {
+  loadHistorique(): Observable<any> {
+    return this.generationService.getHistoriqueGenerations().pipe(
+      tap((data: any) => {
+        if (Array.isArray(data)) {
+          this.historique = data;
+        } else {
+          this.historique = [];
+        }
+      }),
+      catchError((error) => {
+        console.error('Erreur historique:', error);
         this.historique = [];
-      }
-    }),
-    catchError((error) => {
-      console.error('Erreur historique:', error);
-      this.historique = [];
-      return of([]); // ← IMPORTANT : retourner un observable même en erreur
-    })
-  );
-}
+        return of([]);
+      })
+    );
+  }
 
   executerDiagnostic() {
     this.generationService.diagnostiquerBaseDeDonnees().subscribe({
@@ -497,51 +513,51 @@ export class GenerationComponent implements OnInit {
   }
 
   genererPourClasse() {
-  // Validation
-  if (!this.selectedClasseId) {
-    this.notificationService.showWarning('Veuillez sélectionner une classe');
-    return;
-  }
-
-  const classe = this.classes.find(c => c.id === this.selectedClasseId);
-
-  // Afficher le chargement
-  this.isGenerating = true;
-
-  // 1. Générer l'emploi du temps
-  this.generationService.genererPourClasse(
-    this.selectedClasseId,
-    this.anneeScolaire,
-    this.options
-  ).subscribe({
-    next: (result) => {
-      // 2. Succès : afficher la notification
-      this.notificationService.showSuccess(
-        result.message || `Génération pour ${classe.nom} terminée !`
-      );
-
-      // 3. RECHARGER l'historique
-      this.generationService.getHistoriqueGenerations().subscribe({
-        next: (historiqueData) => {
-          // 4. Mettre à jour la liste
-          if (Array.isArray(historiqueData)) {
-            this.historique = historiqueData;
-          }
-          // 5. Désactiver le chargement SEULEMENT après le rechargement
-          this.isGenerating = false;
-        },
-        error: () => {
-          this.isGenerating = false;
-        }
-      });
-    },
-    error: (error) => {
-      console.error('Erreur génération:', error);
-      this.notificationService.showError('Erreur: ' + error.message);
-      this.isGenerating = false;
+    // Validation
+    if (!this.selectedClasseId) {
+      this.notificationService.showWarning('Veuillez sélectionner une classe');
+      return;
     }
-  });
-}
+
+    const classe = this.classes.find(c => c.id === this.selectedClasseId);
+
+    // Afficher le chargement
+    this.isGenerating = true;
+
+    // 1. Générer l'emploi du temps
+    this.generationService.genererPourClasse(
+      this.selectedClasseId,
+      this.anneeScolaire,
+      this.options
+    ).subscribe({
+      next: (result) => {
+        // 2. Succès : afficher la notification
+        this.notificationService.showSuccess(
+          result.message || `Génération pour ${classe.nom} terminée !`
+        );
+
+        // 3. RECHARGER l'historique
+        this.generationService.getHistoriqueGenerations().subscribe({
+          next: (historiqueData) => {
+            // 4. Mettre à jour la liste
+            if (Array.isArray(historiqueData)) {
+              this.historique = historiqueData;
+            }
+            // 5. Désactiver le chargement SEULEMENT après le rechargement
+            this.isGenerating = false;
+          },
+          error: () => {
+            this.isGenerating = false;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Erreur génération:', error);
+        this.notificationService.showError('Erreur: ' + error.message);
+        this.isGenerating = false;
+      }
+    });
+  }
 
   genererPourEnseignant() {
     if (!this.selectedEnseignantId) {
@@ -585,35 +601,34 @@ export class GenerationComponent implements OnInit {
     this.router.navigate(['/visualisation', emploiId]);
   }
 
-  // REMPLACEZ la méthode exporterPDF existante par celle-ci
   exportPDFMatriciel(emploiId: string, nom: string) {
-  // Extraire le nom de la classe depuis le nom de l'emploi du temps
-  // Format attendu: "Emploi du temps - 4 ème - 2025-2026"
-  let classeNom = "4 ème"; // valeur par défaut
+    // Extraire le nom de la classe depuis le nom de l'emploi du temps
+    // Format attendu: "Emploi du temps - 4 ème - 2025-2026"
+    let classeNom = "4 ème"; // valeur par défaut
 
-  const match = nom.match(/Emploi du temps - (.+?) - \d{4}-\d{4}/);
-  if (match && match[1]) {
-    classeNom = match[1].trim();
-  }
-
-  this.generationService.exporterPDFMatriciel(emploiId, classeNom).subscribe({
-    next: (blob: Blob) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `EDT_${classeNom.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      this.notificationService.showSuccess('PDF exporté avec succès (format tableau) !');
-    },
-    error: (error) => {
-      console.error('Erreur export PDF matriciel:', error);
-      this.notificationService.showError('Erreur lors de l\'export PDF: ' + error.message);
+    const match = nom.match(/Emploi du temps - (.+?) - \d{4}-\d{4}/);
+    if (match && match[1]) {
+      classeNom = match[1].trim();
     }
-  });
+
+    this.generationService.exporterPDFMatriciel(emploiId, classeNom).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EDT_${classeNom.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.notificationService.showSuccess('PDF exporté avec succès (format tableau) !');
+      },
+      error: (error) => {
+        console.error('Erreur export PDF matriciel:', error);
+        this.notificationService.showError('Erreur lors de l\'export PDF: ' + error.message);
+      }
+    });
   }
 
   exporterExcel(emploiId: string, nom: string) {
@@ -637,6 +652,60 @@ export class GenerationComponent implements OnInit {
     });
   }
 
+  // ✅ NOUVELLE MÉTHODE POUR EXPORTER LE PDF ENSEIGNANT
+  exportPDFEnseignant(emploiId: string, nom: string, anneeScolaire: string) {
+    this.generationService.exporterPDFEnseignant(emploiId, anneeScolaire).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EDT_Enseignant_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.notificationService.showSuccess('PDF enseignant exporté avec succès !');
+      },
+      error: (error) => {
+        console.error('Erreur export PDF enseignant:', error);
+        this.notificationService.showError('Erreur lors de l\'export PDF: ' + error.message);
+      }
+    });
+  }
+   // ✅ NOUVELLE MÉTHODE POUR EXPORTER LE PDF ENSEIGNANT TOUTES CLASSES
+exportPDFEnseignantToutesClasses(enseignantId: string, nom: string, anneeScolaire: string) {
+  console.log('🟣 Export PDF enseignant toutes classes - ID:', enseignantId);
+  console.log('🟣 Année scolaire:', anneeScolaire);
+
+  if (!enseignantId) {
+    this.notificationService.showError('ID enseignant manquant');
+    return;
+  }
+
+  this.generationService.exporterPDFEnseignantToutesClasses(enseignantId, anneeScolaire).subscribe({
+    next: (blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Générer un nom de fichier avec le nom de l'enseignant
+      const nomEnseignant = nom.replace(/Emploi du temps - /g, '').replace(/ - \d{4}-\d{4}/g, '').trim();
+      a.download = `EDT_${nomEnseignant}_Toutes_Classes_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.notificationService.showSuccess('PDF enseignant (toutes classes) exporté avec succès !');
+    },
+    error: (error) => {
+      console.error('❌ Erreur export PDF enseignant toutes classes:', error);
+      this.notificationService.showError('Erreur lors de l\'export PDF: ' + error.message);
+    }
+  });
+}
   // === MÉTHODES UTILITAIRES ===
   detecterType(nom: string): string {
     if (!nom) return 'Global';
@@ -659,10 +728,14 @@ export class GenerationComponent implements OnInit {
 
   getTypeBadgeClass(type: string): string {
     switch (type) {
-      case 'Global': return 'bg-primary';
-      case 'Classe': return 'bg-success';
-      case 'Enseignant': return 'bg-info';
-      default: return 'bg-secondary';
+      case 'GLOBAL':
+        return 'bg-primary'; // Bleu
+      case 'CLASSE':
+        return 'bg-success'; // Vert
+      case 'ENSEIGNANT':
+        return 'bg-warning text-dark'; // Jaune
+      default:
+        return 'bg-secondary';
     }
   }
 
@@ -681,45 +754,63 @@ export class GenerationComponent implements OnInit {
     }
   }
 
-  // Ajoutez cette propriété
   isDeleting = false;
 
-  // Ajoutez cette méthode pour supprimer un emploi du temps
-supprimerEmploi(emploiId: string, nomEmploi: string) {
-  // Demander confirmation
-  if (!confirm(`Supprimer "${nomEmploi}" ?`)) {
-    return;
+  supprimerEmploi(emploiId: string, nomEmploi: string) {
+    // Demander confirmation
+    if (!confirm(`Supprimer "${nomEmploi}" ?`)) {
+      return;
+    }
+
+    // Afficher le chargement
+    this.isDeleting = true;
+
+    // 1. Supprimer l'emploi
+    this.generationService.supprimerEmploiDuTemps(emploiId).subscribe({
+      next: () => {
+        // 2. Succès : notification
+        this.notificationService.showSuccess('Emploi du temps supprimé !');
+
+        // 3. RECHARGER l'historique
+        this.generationService.getHistoriqueGenerations().subscribe({
+          next: (historiqueData) => {
+            // 4. Mettre à jour la liste
+            if (Array.isArray(historiqueData)) {
+              this.historique = historiqueData;
+            }
+            // 5. Désactiver le chargement
+            this.isDeleting = false;
+          },
+          error: () => {
+            this.isDeleting = false;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Erreur suppression:', error);
+        this.notificationService.showError('Erreur: ' + error.message);
+        this.isDeleting = false;
+      }
+    });
   }
 
-  // Afficher le chargement
-  this.isDeleting = true;
-
-  // 1. Supprimer l'emploi
-  this.generationService.supprimerEmploiDuTemps(emploiId).subscribe({
-    next: () => {
-      // 2. Succès : notification
-      this.notificationService.showSuccess('Emploi du temps supprimé !');
-
-      // 3. RECHARGER l'historique
-      this.generationService.getHistoriqueGenerations().subscribe({
-        next: (historiqueData) => {
-          // 4. Mettre à jour la liste
-          if (Array.isArray(historiqueData)) {
-            this.historique = historiqueData;
-          }
-          // 5. Désactiver le chargement
-          this.isDeleting = false;
-        },
-        error: () => {
-          this.isDeleting = false;
-        }
-      });
-    },
-    error: (error) => {
-      console.error('Erreur suppression:', error);
-      this.notificationService.showError('Erreur: ' + error.message);
-      this.isDeleting = false;
-    }
-  });
-}
+  exportPDFEnseignantFormatte(enseignantId: string, nom: string, anneeScolaire: string) {
+    this.generationService.exporterPDFEnseignantFormatte(enseignantId, anneeScolaire).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EDT_Enseignant_Formatte_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.notificationService.showSuccess('PDF enseignant formaté exporté avec succès !');
+      },
+      error: (error) => {
+        console.error('Erreur export PDF enseignant formaté:', error);
+        this.notificationService.showError('Erreur lors de l\'export PDF: ' + error.message);
+      }
+    });
+  }
 }

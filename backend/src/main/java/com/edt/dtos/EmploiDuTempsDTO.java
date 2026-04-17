@@ -15,7 +15,7 @@ public class EmploiDuTempsDTO {
     private String classeNom;
     private String filiere;
     private String niveauClasse;
-    private Boolean estGlobal;
+    private Boolean estGlobal=false;
     private Integer nombreCreneaux;
     private Integer nombreCreneauxOccupes;
     private Integer nombreCreneauxLibres;
@@ -26,7 +26,18 @@ public class EmploiDuTempsDTO {
     private String validateurNom;
     private List<String> joursCours; // ["LUNDI", "MARDI", "JEUDI"]
     private String commentaire;
-
+    
+    // ========== NOUVEAUX CHAMPS POUR L'ÉCOLE ==========
+    private String ecoleNom;
+    private String ecoleTelephone;
+    private String ecoleAdresse;
+    private String ecoleLogo;
+    private String ecoleDevise;
+    private String ecoleDre; // Direction Régionale de l'Education
+    private String ecoleIesg; // Inspection de l'enseignement général du secondaire
+    private String ecoleBp; // Boîte Postale
+    private String enseignantId;      // ✅ AJOUT
+    private String enseignantNom;     // ✅ AJOUT
     // Constructeurs
     public EmploiDuTempsDTO() {}
 
@@ -41,7 +52,7 @@ public class EmploiDuTempsDTO {
         this.statut = "BROUILLON";
     }
 
-    // Getters et Setters
+    // Getters et Setters existants
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -108,7 +119,37 @@ public class EmploiDuTempsDTO {
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
 
-    // Méthodes utilitaires
+    // ========== NOUVEAUX GETTERS ET SETTERS POUR L'ÉCOLE ==========
+    public String getEcoleNom() { return ecoleNom; }
+    public void setEcoleNom(String ecoleNom) { this.ecoleNom = ecoleNom; }
+
+    public String getEcoleTelephone() { return ecoleTelephone; }
+    public void setEcoleTelephone(String ecoleTelephone) { this.ecoleTelephone = ecoleTelephone; }
+
+    public String getEcoleAdresse() { return ecoleAdresse; }
+    public void setEcoleAdresse(String ecoleAdresse) { this.ecoleAdresse = ecoleAdresse; }
+
+    public String getEcoleLogo() { return ecoleLogo; }
+    public void setEcoleLogo(String ecoleLogo) { this.ecoleLogo = ecoleLogo; }
+
+    public String getEcoleDevise() { return ecoleDevise; }
+    public void setEcoleDevise(String ecoleDevise) { this.ecoleDevise = ecoleDevise; }
+
+    public String getEcoleDre() { return ecoleDre; }
+    public void setEcoleDre(String ecoleDre) { this.ecoleDre = ecoleDre; }
+
+    public String getEcoleIesg() { return ecoleIesg; }
+    public void setEcoleIesg(String ecoleIesg) { this.ecoleIesg = ecoleIesg; }
+
+    public String getEcoleBp() { return ecoleBp; }
+    public void setEcoleBp(String ecoleBp) { this.ecoleBp = ecoleBp; }
+
+    public String getEnseignantId() { return enseignantId; }
+    public void setEnseignantId(String enseignantId) { this.enseignantId = enseignantId; }
+    
+    public String getEnseignantNom() { return enseignantNom; }
+    public void setEnseignantNom(String enseignantNom) { this.enseignantNom = enseignantNom; }
+    // Méthodes utilitaires existantes
     public String getTypeEmploi() {
         return estGlobal ? "Global (tous les enseignants)" : "Par classe";
     }
@@ -167,7 +208,7 @@ public class EmploiDuTempsDTO {
                 ", classeNom='" + classeNom + '\'' +
                 ", estGlobal=" + estGlobal +
                 ", statut='" + statut + '\'' +
-                ", dateGeneration=" + dateGeneration +
+                ", ecoleNom='" + ecoleNom + '\'' +
                 '}';
     }
 }

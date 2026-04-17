@@ -99,6 +99,14 @@ public class EmploiDuTempsController {
     
     @PostMapping("/generer/global")
     public ResponseEntity<EmploiDuTempsDTO> genererEmploiDuTempsGlobal(@RequestParam String anneeScolaire) {
+        // ✅ CORRECTION : Créer des options par défaut
+        GenerationOptionsDTO options = new GenerationOptionsDTO();
+        options.setVerifierConflits(true);
+        options.setOptimiserRepartition(true);
+        options.setGenererSalles(false);
+        options.setRespecterContraintesEPS(true);
+        options.setPlacerPauses(true);
+        
         return ResponseEntity.ok(generationService.genererEmploiDuTempsGlobal(anneeScolaire));
     }
     
@@ -106,14 +114,30 @@ public class EmploiDuTempsController {
     public ResponseEntity<EmploiDuTempsDTO> genererEmploiDuTempsClasse(
             @PathVariable String classeId, 
             @RequestParam String anneeScolaire) {
-        return ResponseEntity.ok(generationService.genererEmploiDuTempsClasse(classeId, anneeScolaire));
+        // ✅ CORRECTION : Créer des options par défaut
+        GenerationOptionsDTO options = new GenerationOptionsDTO();
+        options.setVerifierConflits(true);
+        options.setOptimiserRepartition(true);
+        options.setGenererSalles(false);
+        options.setRespecterContraintesEPS(true);
+        options.setPlacerPauses(true);
+        
+        return ResponseEntity.ok(generationService.genererEmploiDuTempsClasse(classeId, anneeScolaire, options));
     }
     
     @PostMapping("/generer/enseignant/{enseignantId}")
     public ResponseEntity<EmploiDuTempsDTO> genererEmploiDuTempsEnseignant(
             @PathVariable String enseignantId,
             @RequestParam String anneeScolaire) {
-        return ResponseEntity.ok(generationService.genererEmploiDuTempsEnseignant(enseignantId, anneeScolaire));
+        // ✅ CORRECTION : Créer des options par défaut
+        GenerationOptionsDTO options = new GenerationOptionsDTO();
+        options.setVerifierConflits(true);
+        options.setOptimiserRepartition(true);
+        options.setGenererSalles(false);
+        options.setRespecterContraintesEPS(true);
+        options.setPlacerPauses(true);
+        
+        return ResponseEntity.ok(generationService.genererEmploiDuTempsEnseignant(enseignantId, anneeScolaire, options));
     }
     
     // === GESTION DES EMPLOIS DU TEMPS ===
@@ -135,7 +159,11 @@ public class EmploiDuTempsController {
     
     @GetMapping("/emplois/{id}")
     public ResponseEntity<EmploiDuTempsDTO> getEmploiDuTemps(@PathVariable String id) {
-        return ResponseEntity.ok(generationService.getEmploiDuTemps(id));
+        EmploiDuTempsDTO emploi = generationService.getEmploiDuTemps(id);
+        if (emploi != null) {
+            return ResponseEntity.ok(emploi);
+        }
+        return ResponseEntity.notFound().build();
     }
     
     @PutMapping("/emplois/{id}/statut")

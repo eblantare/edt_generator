@@ -1,5 +1,7 @@
 package com.edt.dtos;
 
+import com.edt.entities.Matiere;
+
 public class EnseignantDTO {
     private String id;
     private String nom;
@@ -8,24 +10,18 @@ public class EnseignantDTO {
     private String email;
     private String telephone;
     private Integer heuresMaxHebdo;
-    private MatiereDTO matiereDominante;
-    private MatiereDTO matiereSecondaire;
+    
+    // ✅ AJOUT : Champs pour les matières
+    private String matiereDominanteId;
+    private Matiere matiereDominante;
+    
+    private String matiereSecondaireId;
+    private Matiere matiereSecondaire;
     
     // Constructeurs
     public EnseignantDTO() {}
     
-    public EnseignantDTO(String id, String nom, String prenom, String matricule, 
-                        String email, String telephone, Integer heuresMaxHebdo) {
-        this.id = id;
-        this.nom = nom;
-        this.prenom = prenom;
-        this.matricule = matricule;
-        this.email = email;
-        this.telephone = telephone;
-        this.heuresMaxHebdo = heuresMaxHebdo;
-    }
-    
-    // Getters et Setters
+    // Getters et Setters existants
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     
@@ -47,9 +43,26 @@ public class EnseignantDTO {
     public Integer getHeuresMaxHebdo() { return heuresMaxHebdo; }
     public void setHeuresMaxHebdo(Integer heuresMaxHebdo) { this.heuresMaxHebdo = heuresMaxHebdo; }
     
-    public MatiereDTO getMatiereDominante() { return matiereDominante; }
-    public void setMatiereDominante(MatiereDTO matiereDominante) { this.matiereDominante = matiereDominante; }
+    // ✅ NOUVEAUX Getters/Setters pour les matières
+    public String getMatiereDominanteId() { return matiereDominanteId; }
+    public void setMatiereDominanteId(String matiereDominanteId) { this.matiereDominanteId = matiereDominanteId; }
     
-    public MatiereDTO getMatiereSecondaire() { return matiereSecondaire; }
-    public void setMatiereSecondaire(MatiereDTO matiereSecondaire) { this.matiereSecondaire = matiereSecondaire; }
+    public Matiere getMatiereDominante() { return matiereDominante; }
+    public void setMatiereDominante(Matiere matiereDominante) { 
+        this.matiereDominante = matiereDominante;
+        if (matiereDominante != null) {
+            this.matiereDominanteId = matiereDominante.getId();
+        }
+    }
+    
+    public String getMatiereSecondaireId() { return matiereSecondaireId; }
+    public void setMatiereSecondaireId(String matiereSecondaireId) { this.matiereSecondaireId = matiereSecondaireId; }
+    
+    public Matiere getMatiereSecondaire() { return matiereSecondaire; }
+    public void setMatiereSecondaire(Matiere matiereSecondaire) { 
+        this.matiereSecondaire = matiereSecondaire;
+        if (matiereSecondaire != null) {
+            this.matiereSecondaireId = matiereSecondaire.getId();
+        }
+    }
 }

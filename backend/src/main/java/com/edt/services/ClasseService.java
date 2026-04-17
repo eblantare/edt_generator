@@ -3,7 +3,9 @@ package com.edt.services;
 
 import com.edt.dtos.ClasseDTO;
 import com.edt.entities.Classe;
+import com.edt.entities.EmploiDuTemps;
 import com.edt.repository.ClasseRepository;
+import com.edt.repository.EmploiDuTempsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +24,9 @@ public class ClasseService {
     @Autowired
     private ClasseRepository classeRepository;
     
-    // Méthode existante pour compatibilité
+    @Autowired
+    private EmploiDuTempsRepository emploiDuTempsRepository;
+    
     public List<ClasseDTO> getAllClasses() {
         return classeRepository.findAll()
             .stream()
@@ -30,7 +34,6 @@ public class ClasseService {
             .collect(Collectors.toList());
     }
     
-    // NOUVELLE méthode pour la pagination
     public Page<ClasseDTO> getAllClassesPaginated(
         int page, 
         int size, 
@@ -38,7 +41,6 @@ public class ClasseService {
         String sortBy,
         String sortDirection
     ) {
-        // Créer l'objet Pageable avec tri
         Sort sort = sortDirection.equalsIgnoreCase("desc") 
             ? Sort.by(sortBy).descending() 
             : Sort.by(sortBy).ascending();
@@ -48,14 +50,11 @@ public class ClasseService {
         Page<Classe> classesPage;
         
         if (search != null && !search.trim().isEmpty()) {
-            // Recherche avec pagination
             classesPage = classeRepository.searchClasses(search, pageable);
         } else {
-            // Toutes les classes avec pagination
             classesPage = classeRepository.findAll(pageable);
         }
         
-        // Convertir Page<Classe> en Page<ClasseDTO>
         return classesPage.map(this::convertToDTO);
     }
     
@@ -66,7 +65,6 @@ public class ClasseService {
     }
     
     public ClasseDTO createClasse(ClasseDTO classeDTO) {
-        // Vérifier si le nom existe déjà
         Classe existing = classeRepository.findByNom(classeDTO.getNom());
         if (existing != null) {
             throw new RuntimeException("Une classe avec ce nom existe déjà");
@@ -86,7 +84,6 @@ public class ClasseService {
         Classe classe = classeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Classe non trouvée"));
         
-        // Vérifier si le nouveau nom est utilisé par une autre classe
         if (!classe.getNom().equals(classeDTO.getNom())) {
             Classe existing = classeRepository.findByNom(classeDTO.getNom());
             if (existing != null && !existing.getId().equals(id)) {
@@ -103,8 +100,32 @@ public class ClasseService {
         return convertToDTO(classe);
     }
     
+    @Transactional
     public void deleteClasse(String id) {
-        classeRepository.deleteById(id);
+        System.out.println("🗑️ Tentative de suppression de la classe: " + id);
+        
+        // Vérifier si la classe existe
+        Classe classe = classeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Classe non trouvée"));
+        
+        // Vérifier si la classe est utilisée dans des emplois du temps
+        List<EmploiDuTemps> emplois = emploiDuTempsRepository.findByClasseId(id);
+        
+        if (!emplois.isEmpty()) {
+            // Construire un message clair pour l'utilisateur
+            String message = String.format(
+                "Impossible de supprimer la classe '%s' car elle est utilisée dans %d emploi(s) du temps. " +
+                "Veuillez d'abord supprimer les emplois du temps associés.",
+                classe.getNom(),
+                emplois.size()
+            );
+            System.out.println("❌ " + message);
+            throw new RuntimeException(message);
+        }
+        
+        // Si aucune dépendance, supprimer la classe
+        classeRepository.delete(classe);
+        System.out.println("✅ Classe supprimée avec succès: " + id);
     }
     
     private ClasseDTO convertToDTO(Classe classe) {

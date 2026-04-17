@@ -293,27 +293,7 @@
         </div>
       </div>
 
-      <!-- DEBUG SECTION (IMPORTANTE - À ACTIVER POUR DÉBOGAGE) -->
-      <div *ngIf="!isLoading && enseignant" class="row mt-4">
-        <div class="col-12">
-          <div class="alert alert-warning">
-            <h6 class="alert-heading">
-              <i class="bi bi-bug me-2"></i> Informations de débogage
-            </h6>
-            <p class="mb-2"><strong>État des matières:</strong></p>
-            <ul class="mb-2">
-              <li>Matière dominante existe: <code>{{ !!enseignant.matiereDominante }}</code></li>
-              <li>Matière secondaire existe: <code>{{ !!enseignant.matiereSecondaire }}</code></li>
-              <li *ngIf="enseignant.matiereDominante">Code dominante: <code>{{ enseignant.matiereDominante.code }}</code></li>
-              <li *ngIf="enseignant.matiereSecondaire">Code secondaire: <code>{{ enseignant.matiereSecondaire.code }}</code></li>
-              <li *ngIf="enseignant.matiereDominante">Type dominante: <code>{{ getTypeOf(enseignant.matiereDominante) }}</code></li>
-              <li *ngIf="enseignant.matiereSecondaire">Type secondaire: <code>{{ getTypeOf(enseignant.matiereSecondaire) }}</code></li>
-            </ul>
-            <p class="mb-0"><strong>Données complètes:</strong></p>
-            <pre class="mt-2 mb-0 small bg-dark text-light p-2 rounded">{{ enseignant | json }}</pre>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Empty State -->
       <div *ngIf="!isLoading && !enseignant" class="text-center py-5">

@@ -10,22 +10,22 @@ import java.util.List;
 
 @Repository
 public interface CreneauHoraireRepository extends JpaRepository<CreneauHoraire, String> {
+    
     List<CreneauHoraire> findByEmploiDuTempsId(String emploiDuTempsId);
+    
     List<CreneauHoraire> findByEnseignantId(String enseignantId);
+    
     List<CreneauHoraire> findByClasseId(String classeId);
-    List<CreneauHoraire> findByJourSemaineAndHeureDebut(String jourSemaine, String heureDebut);
     
-    @Query("SELECT c FROM CreneauHoraire c WHERE c.emploiDuTemps.id = :emploiId AND c.jourSemaine = :jour")
-    List<CreneauHoraire> findByEmploiAndJour(@Param("emploiId") String emploiId, 
-                                             @Param("jour") String jour);
+    // ✅ CORRECTION ICI - Syntaxe JPA correcte
+    List<CreneauHoraire> findByEnseignantIdAndEmploiDuTemps_AnneeScolaire(
+        String enseignantId, String anneeScolaire);
     
-    @Query("SELECT c FROM CreneauHoraire c WHERE c.emploiDuTemps.id = :emploiId AND c.enseignant.id = :enseignantId")
-    List<CreneauHoraire> findByEmploiAndEnseignant(@Param("emploiId") String emploiId, 
-                                                   @Param("enseignantId") String enseignantId);
-    
-    @Query("SELECT c FROM CreneauHoraire c WHERE c.emploiDuTemps.id = :emploiId AND c.jourSemaine = :jour AND c.heureDebut = :heure")
-    List<CreneauHoraire> findByEmploiDuTempsIdAndJourSemaineAndHeureDebut(
-            @Param("emploiId") String emploiId, 
-            @Param("jour") String jour, 
-            @Param("heure") String heure);
+    @Query("SELECT c FROM CreneauHoraire c WHERE " +
+           "c.enseignant.id = :enseignantId AND " +
+           "c.emploiDuTemps.anneeScolaire = :anneeScolaire AND " +
+           "c.estLibre = false")
+    List<CreneauHoraire> findCoursByEnseignantAndAnnee(
+        @Param("enseignantId") String enseignantId, 
+        @Param("anneeScolaire") String anneeScolaire);
 }

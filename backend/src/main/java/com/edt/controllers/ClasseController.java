@@ -77,9 +77,14 @@ public class ClasseController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteClasse(@PathVariable String id) {
-        System.out.println("📡 DELETE /api/classes/" + id);
-        classeService.deleteClasse(id);
-        return ResponseEntity.noContent().build();
-    }
+    public ResponseEntity<?> deleteClasse(@PathVariable String id) {
+       System.out.println("📡 DELETE /api/classes/" + id);
+       try {
+          classeService.deleteClasse(id);
+          return ResponseEntity.noContent().build();
+       } catch (RuntimeException e) {
+        // Retourner le message d'erreur avec un statut 400 (Bad Request)
+          return ResponseEntity.badRequest().body(e.getMessage());
+      }
+   }
 }

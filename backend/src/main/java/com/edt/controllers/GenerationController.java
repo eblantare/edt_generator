@@ -43,8 +43,10 @@ public class GenerationController {
     
     @Autowired
     private CreneauHoraireRepository creneauHoraireRepository;
+    
     @Autowired
     private MatiereRepository matiereRepository;
+    
     @Autowired
     private EnseignantRepository enseignantRepository;
     
@@ -86,41 +88,40 @@ public class GenerationController {
     @PostMapping("/global")
     public ResponseEntity<GenerationResultDTO> genererGlobal(@RequestBody GenerationRequestDTO request) {
         try {
-           System.out.println("\n" + "=".repeat(60));
-           System.out.println("🚀 GÉNÉRATION GLOBALE DEMANDÉE");
-           System.out.println("📅 Année scolaire: " + request.getAnneeScolaire());
-           System.out.println("=".repeat(60));
-        
-           long nbEnseignements = enseignementRepository.count();
-           if (nbEnseignements == 0) {
-               return ResponseEntity.badRequest().body(
-                  new GenerationResultDTO(false, "❌ Aucun enseignement trouvé dans la base")
-               );
-           }
-        
-           // UTILISER LA NOUVELLE MÉTHODE SANS CHEVAUCHEMENT
-           GenerationResultDTO result;
-           if (request.getOptions() != null) {
-              result = generationService.genererGlobalSansChevauchement(request.getAnneeScolaire(), request.getOptions());
-           } else {
-               // Créer des options par défaut
-               GenerationOptionsDTO options = new GenerationOptionsDTO();
-               options.setVerifierConflits(true);
-               options.setOptimiserRepartition(true);
-               options.setGenererSalles(false);
-               options.setRespecterContraintesEPS(true);
-               options.setPlacerPauses(true);
-               result = generationService.genererGlobalSansChevauchement(request.getAnneeScolaire(), options);
-               }
-        
+            System.out.println("\n" + "=".repeat(60));
+            System.out.println("🚀 GÉNÉRATION GLOBALE DEMANDÉE");
+            System.out.println("📅 Année scolaire: " + request.getAnneeScolaire());
+            System.out.println("=".repeat(60));
+            
+            long nbEnseignements = enseignementRepository.count();
+            if (nbEnseignements == 0) {
+                return ResponseEntity.badRequest().body(
+                    new GenerationResultDTO(false, "❌ Aucun enseignement trouvé dans la base")
+                );
+            }
+            
+            // Créer des options par défaut si non fournies
+            GenerationOptionsDTO options = request.getOptions();
+            if (options == null) {
+                options = new GenerationOptionsDTO();
+                options.setVerifierConflits(true);
+                options.setOptimiserRepartition(true);
+                options.setGenererSalles(false);
+                options.setRespecterContraintesEPS(true);
+                options.setPlacerPauses(true);
+            }
+            
+            // Appeler la méthode sans chevauchement
+            GenerationResultDTO result = generationService.genererGlobalSansChevauchement(request.getAnneeScolaire(), options);
+            
             return ResponseEntity.ok(result);
-        
+            
         } catch (Exception e) {
-           System.err.println("❌ Erreur: " + e.getMessage());
-           e.printStackTrace();
-           return ResponseEntity.badRequest().body(
-              new GenerationResultDTO(false, "Erreur: " + e.getMessage())
-           );
+            System.err.println("❌ Erreur: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(
+                new GenerationResultDTO(false, "Erreur: " + e.getMessage())
+            );
         }
     }
     
@@ -159,19 +160,23 @@ public class GenerationController {
             
             System.out.println("📚 " + enseignements.size() + " enseignements trouvés");
             
-            GenerationResultDTO result;
-            if (request.getOptions() != null) {
-                result = generationService.genererPourClasse(
-                    request.getClasseId(), 
-                    request.getAnneeScolaire(),
-                    request.getOptions()
-                );
-            } else {
-                result = generationService.genererPourClasse(
-                    request.getClasseId(), 
-                    request.getAnneeScolaire()
-                );
+            // CORRECTION: Créer des options par défaut si non fournies
+            GenerationOptionsDTO options = request.getOptions();
+            if (options == null) {
+                options = new GenerationOptionsDTO();
+                options.setVerifierConflits(true);
+                options.setOptimiserRepartition(true);
+                options.setGenererSalles(false);
+                options.setRespecterContraintesEPS(true);
+                options.setPlacerPauses(true);
             }
+            
+            // Toujours passer l'objet options
+            GenerationResultDTO result = generationService.genererPourClasse(
+                request.getClasseId(), 
+                request.getAnneeScolaire(),
+                options
+            );
             
             if (result.isSuccess()) {
                 System.out.println("✅ SUCCÈS ! Emploi généré: " + result.getEmploiDuTempsId());
@@ -197,19 +202,23 @@ public class GenerationController {
             System.out.println("📅 Année: " + request.getAnneeScolaire());
             System.out.println("=".repeat(60));
             
-            GenerationResultDTO result;
-            if (request.getOptions() != null) {
-                result = generationService.genererPourEnseignant(
-                    request.getEnseignantId(), 
-                    request.getAnneeScolaire(),
-                    request.getOptions()
-                );
-            } else {
-                result = generationService.genererPourEnseignant(
-                    request.getEnseignantId(), 
-                    request.getAnneeScolaire()
-                );
+            // CORRECTION: Créer des options par défaut si non fournies
+            GenerationOptionsDTO options = request.getOptions();
+            if (options == null) {
+                options = new GenerationOptionsDTO();
+                options.setVerifierConflits(true);
+                options.setOptimiserRepartition(true);
+                options.setGenererSalles(false);
+                options.setRespecterContraintesEPS(true);
+                options.setPlacerPauses(true);
             }
+            
+            // Toujours passer l'objet options
+            GenerationResultDTO result = generationService.genererPourEnseignant(
+                request.getEnseignantId(), 
+                request.getAnneeScolaire(),
+                options
+            );
             
             return ResponseEntity.ok(result);
             
@@ -246,34 +255,34 @@ public class GenerationController {
     
     @DeleteMapping("/emploi/{id}")
     public ResponseEntity<?> supprimerEmploi(@PathVariable String id) {
-       try {
-           System.out.println("🗑️ Suppression de l'emploi: " + id);
-        
-           // Vérifier si l'emploi existe
-           Optional<EmploiDuTemps> emploiOpt = emploiDuTempsRepository.findById(id);
-           if (emploiOpt.isEmpty()) {
-              return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", "Emploi du temps non trouvé avec l'ID: " + id
-              ));
-           }
-        
-           generationService.deleteEmploiDuTemps(id);
-        
-           return ResponseEntity.ok(Map.of(
-            "success", true, 
-            "message", "Emploi du temps supprimé avec succès"
-          ));
-        
+        try {
+            System.out.println("🗑️ Suppression de l'emploi: " + id);
+            
+            // Vérifier si l'emploi existe
+            Optional<EmploiDuTemps> emploiOpt = emploiDuTempsRepository.findById(id);
+            if (emploiOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, 
+                    "message", "Emploi du temps non trouvé avec l'ID: " + id
+                ));
+            }
+            
+            generationService.deleteEmploiDuTemps(id);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", "Emploi du temps supprimé avec succès"
+            ));
+            
         } catch (Exception e) {
-          // LOGGUER L'ERREUR COMPLÈTE
-          System.err.println("❌ ERREUR DÉTAILLÉE: " + e.getMessage());
-          e.printStackTrace();
-        
-          return ResponseEntity.badRequest().body(Map.of(
-            "success", false, 
-            "message", "Erreur: " + e.getMessage()
-          ));
+            // Logger l'erreur complète
+            System.err.println("❌ ERREUR DÉTAILLÉE: " + e.getMessage());
+            e.printStackTrace();
+            
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", "Erreur: " + e.getMessage()
+            ));
         }
     }
     
@@ -294,6 +303,28 @@ public class GenerationController {
             return ResponseEntity.ok(diagnostic);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("status", "ERROR", "message", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/diagnostic/enseignements")
+    public ResponseEntity<?> diagnosticEnseignements() {
+        try {
+            List<Map<String, Object>> resultats = new ArrayList<>();
+            List<Enseignement> enseignements = enseignementRepository.findAll();
+            
+            for (Enseignement e : enseignements) {
+                Map<String, Object> ensMap = new HashMap<>();
+                ensMap.put("id", e.getId());
+                ensMap.put("classe", e.getClasse() != null ? e.getClasse().getNom() : "N/A");
+                ensMap.put("enseignant", e.getEnseignant() != null ? e.getEnseignant().getNom() : "N/A");
+                ensMap.put("matiere", e.getMatiere() != null ? e.getMatiere().getCode() : "N/A");
+                ensMap.put("heures", e.getHeuresParSemaine());
+                resultats.add(ensMap);
+            }
+            
+            return ResponseEntity.ok(resultats);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

@@ -320,4 +320,40 @@ export class GenerationService {
       return throwError(() => new Error(errorMessage));
     };
   }
+
+    exporterPDFEnseignant(enseignantId: string, anneeScolaire: string): Observable<Blob> {
+    return this.http.get(`${this.baseApiUrl}/export/enseignant/${enseignantId}?anneeScolaire=${anneeScolaire}`, {
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Erreur export PDF enseignant:', error);
+        return throwError(() => new Error('Impossible d\'exporter le PDF pour cet enseignant'));
+      })
+    );
+  }
+
+  exporterPDFEnseignantToutesClasses(enseignantId: string, anneeScolaire: string): Observable<Blob> {
+  const url = `${this.baseApiUrl}/export/enseignant/toutes-classes/${enseignantId}?anneeScolaire=${anneeScolaire}`;
+  console.log('🟣 Appel API toutes classes:', url);
+
+  return this.http.get(url, {
+    responseType: 'blob'
+  }).pipe(
+    catchError((error) => {
+      console.error('❌ Erreur export PDF enseignant toutes classes:', error);
+      return throwError(() => new Error('Impossible d\'exporter le PDF pour toutes les classes'));
+    })
+  );
+}
+
+  exporterPDFEnseignantFormatte(enseignantId: string, anneeScolaire: string): Observable<Blob> {
+    return this.http.get(`${this.baseApiUrl}/export/enseignant/formatte/${enseignantId}?anneeScolaire=${anneeScolaire}`, {
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Erreur export PDF enseignant formaté:', error);
+        return throwError(() => new Error('Impossible d\'exporter le PDF formaté'));
+      })
+    );
+  }
 }

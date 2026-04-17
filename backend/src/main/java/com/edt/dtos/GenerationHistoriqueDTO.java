@@ -9,11 +9,12 @@ public class GenerationHistoriqueDTO {
     private LocalDate dateGeneration;
     private String statut;
     private String classeNom;
+    private String enseignantId;    // ✅ AJOUT
+    private String enseignantNom;   // ✅ AJOUT
+    private String type;
     private int totalCreneaux;
     private int creneauxOccupes;
-
-    public GenerationHistoriqueDTO() {}
-
+    
     // Getters et Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -32,6 +33,15 @@ public class GenerationHistoriqueDTO {
     
     public String getClasseNom() { return classeNom; }
     public void setClasseNom(String classeNom) { this.classeNom = classeNom; }
+    
+    public String getEnseignantId() { return enseignantId; }        // ✅ AJOUT
+    public void setEnseignantId(String enseignantId) { this.enseignantId = enseignantId; }  // ✅ AJOUT
+    
+    public String getEnseignantNom() { return enseignantNom; }      // ✅ AJOUT
+    public void setEnseignantNom(String enseignantNom) { this.enseignantNom = enseignantNom; }  // ✅ AJOUT
+    
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
     
     public int getTotalCreneaux() { return totalCreneaux; }
     public void setTotalCreneaux(int totalCreneaux) { this.totalCreneaux = totalCreneaux; }

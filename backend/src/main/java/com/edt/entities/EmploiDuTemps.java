@@ -29,6 +29,9 @@ public class EmploiDuTemps {
     @Column(name = "est_global")
     private Boolean estGlobal;
     
+    @Column(name = "type")  // ✅ NOUVEAU CHAMP AJOUTÉ
+    private String type;     // "GLOBAL", "CLASSE", "ENSEIGNANT"
+    
     private String statut;
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -68,6 +71,9 @@ public class EmploiDuTemps {
     
     public Boolean getEstGlobal() { return estGlobal; }
     public void setEstGlobal(Boolean estGlobal) { this.estGlobal = estGlobal; }
+    
+    public String getType() { return type; }  // ✅ NOUVEAU GETTER
+    public void setType(String type) { this.type = type; }  // ✅ NOUVEAU SETTER
     
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }

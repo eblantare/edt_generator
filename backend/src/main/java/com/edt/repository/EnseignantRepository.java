@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface EnseignantRepository extends JpaRepository<Enseignant, String> {
     
@@ -18,5 +20,12 @@ public interface EnseignantRepository extends JpaRepository<Enseignant, String> 
            "LOWER(e.email) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Enseignant> findBySearch(@Param("search") String search, Pageable pageable);
     
-    Enseignant findByMatricule(String matricule);
+    // ✅ UNE SEULE méthode findByMatricule qui retourne Optional
+    Optional<Enseignant> findByMatricule(String matricule);
+    
+    // Méthode pour la recherche simple
+    Page<Enseignant> findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(
+        String nom, String prenom, Pageable pageable);
+    
+    Optional<Enseignant> findByEmail(String email);
 }

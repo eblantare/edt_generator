@@ -5,6 +5,7 @@ import com.edt.entities.CreneauHoraire;
 import com.edt.services.GenerationService;
 import com.edt.services.ExportPDFMatricielService;
 import com.edt.services.EmploiDuTempsMatricielService;
+import com.edt.services.ExportEnseignantFormatteService;
 import com.edt.repository.CreneauHoraireRepository;
 
 import com.lowagie.text.Document;
@@ -41,6 +42,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.awt.Color;
 import java.util.stream.Collectors;
+import com.edt.services.ExportEnseignantService;
+import com.edt.entities.Enseignant;
+import com.edt.repository.EnseignantRepository;
 
 @RestController
 @RequestMapping("/api/export")
@@ -49,7 +53,8 @@ public class ExportController {
     
     @Autowired
     private GenerationService generationService;
-    
+    @Autowired
+    private ExportEnseignantService exportEnseignantService;
     @Autowired
     private CreneauHoraireRepository creneauHoraireRepository;
     
@@ -58,7 +63,13 @@ public class ExportController {
     
     @Autowired
     private EmploiDuTempsMatricielService emploiDuTempsMatricielService;
-    
+
+    @Autowired
+    private EnseignantRepository enseignantRepository;
+
+    @Autowired
+    private ExportEnseignantFormatteService exportEnseignantFormatteService;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FILENAME_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     
@@ -350,4 +361,130 @@ public class ExportController {
         infos.put("periode", LocalDate.now().getYear() + "-" + (LocalDate.now().getYear() + 1));
         return infos;
     }
+
+
+
+    /**
+     * EXPORT PDF POUR ENSEIGNANT - Format tableau par classe
+     */
+    @GetMapping("/enseignant/{enseignantId}")
+    public ResponseEntity<byte[]> exporterPDFPourEnseignant(
+            @PathVariable String enseignantId,
+            @RequestParam String anneeScolaire) {
+        try {
+            System.out.println("👤 Export PDF pour enseignant: " + enseignantId);
+            
+            byte[] pdfContent = exportEnseignantService.exporterPDFPourEnseignant(enseignantId, anneeScolaire);
+            
+            // Récupérer le nom de l'enseignant pour le nom du fichier
+            String enseignantNom = "enseignant";
+            try {
+                Enseignant enseignant = enseignantRepository.findById(enseignantId).orElse(null);
+                if (enseignant != null) {
+                    enseignantNom = (enseignant.getNom() + "_" + (enseignant.getPrenom() != null ? enseignant.getPrenom() : ""))
+                        .replace(" ", "_");
+                }
+            } catch (Exception e) {
+                // Ignorer
+            }
+            
+            String filename = "EDT_" + enseignantNom + "_" + 
+                            LocalDate.now().format(FILENAME_DATE_FORMATTER) + ".pdf";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", filename);
+            
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfContent);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur export PDF enseignant: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+        /**
+     * EXPORT PDF POUR ENSEIGNANT - TOUTES LES CLASSES REGROUPÉES
+     */
+    @GetMapping("/enseignant/toutes-classes/{enseignantId}")
+    public ResponseEntity<byte[]> exporterPDFEnseignantToutesClasses(
+            @PathVariable String enseignantId,
+            @RequestParam String anneeScolaire) {
+        try {
+            System.out.println("👤 Export PDF pour enseignant (toutes classes): " + enseignantId);
+            
+            byte[] pdfContent = exportEnseignantService.exporterPDFPourEnseignantToutesClasses(enseignantId, anneeScolaire);
+            
+            String enseignantNom = "enseignant";
+            try {
+                Enseignant enseignant = enseignantRepository.findById(enseignantId).orElse(null);
+                if (enseignant != null) {
+                    enseignantNom = (enseignant.getNom() + "_" + (enseignant.getPrenom() != null ? enseignant.getPrenom() : ""))
+                        .replace(" ", "_");
+                }
+            } catch (Exception e) {}
+            
+            String filename = "EDT_" + enseignantNom + "_toutes_classes_" + 
+                            LocalDate.now().format(FILENAME_DATE_FORMATTER) + ".pdf";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", filename);
+            
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfContent);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur export PDF enseignant toutes classes: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+
+
+    /**
+     * EXPORT PDF ENSEIGNANT FORMATTÉ - Format tableau par classe
+     */
+    @GetMapping("/enseignant/formatte/{enseignantId}")
+    public ResponseEntity<byte[]> exporterPDFEnseignantFormatte(
+            @PathVariable String enseignantId,
+            @RequestParam String anneeScolaire) {
+        try {
+            System.out.println("👤 Export PDF enseignant formaté pour: " + enseignantId);
+            
+            byte[] pdfContent = exportEnseignantFormatteService.exporterPDFEnseignantFormatte(enseignantId, anneeScolaire);
+            
+            // Récupérer le nom de l'enseignant
+            String enseignantNom = "enseignant";
+            try {
+                Enseignant enseignant = enseignantRepository.findById(enseignantId).orElse(null);
+                if (enseignant != null) {
+                    enseignantNom = (enseignant.getNom() + "_" + (enseignant.getPrenom() != null ? enseignant.getPrenom() : ""))
+                        .replace(" ", "_");
+                }
+            } catch (Exception e) {}
+            
+            String filename = "EDT_" + enseignantNom + "_" + 
+                            LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".pdf";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", filename);
+            
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfContent);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur export PDF enseignant formaté: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 }

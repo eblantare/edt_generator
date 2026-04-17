@@ -166,17 +166,30 @@ export class ClasseListComponent implements OnInit {
         next: () => {
           this.notificationService.success(
             'Succès',
-            'Classe supprimée avec succès'
+           'Classe supprimée avec succès'
           );
           this.loadClasses();
         },
         error: (error) => {
           console.error('❌ ClasseListComponent - Erreur suppression:', error);
+
+          // Extraire le message d'erreur du backend
+          let errorMessage = 'Erreur lors de la suppression de la classe';
+
+          if (error.error && typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error && error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+
+        // Afficher le message d'erreur clair
           this.notificationService.error(
-            'Erreur',
-            `Erreur lors de la suppression de la classe: ${error.message}`
+            'Suppression impossible',
+            errorMessage
           );
-        }
+         }
       });
     }
     this.showDeleteModal = false;

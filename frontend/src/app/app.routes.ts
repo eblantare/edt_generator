@@ -9,7 +9,7 @@ export const routes: Routes = [
       .then(m => m.ConnexionComponent)
   },
 
-  // Page d'inscription (publique) - AJOUTÉE
+  // Page d'inscription (publique)
   {
     path: 'inscription',
     loadComponent: () => import('./components/inscription/inscription.component')
@@ -127,6 +127,14 @@ export const routes: Routes = [
     path: 'classes/:id',
     loadComponent: () => import('./components/classe-details/classe-details.component')
       .then(m => m.ClasseDetailsComponent),
+    canActivate: [AuthGuard]
+  },
+
+  // ========== NOUVELLE ROUTE POUR LA CONFIGURATION DE L'ÉCOLE ==========
+  {
+    path: 'ecole-config',
+    loadComponent: () => import('./components/ecole-config/ecole-config.component')
+      .then(m => m.EcoleConfigComponent),
     canActivate: [AuthGuard]
   },
 
