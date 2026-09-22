@@ -8,6 +8,16 @@ import java.util.Optional;
 
 @Repository
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, String> {
+    
+    // Recherche exacte (existante)
     Optional<Utilisateur> findByEmail(String email);
+    
+    // NOUVEAU : Recherche insensible à la casse
+    Optional<Utilisateur> findByEmailIgnoreCase(String email);
+    
+    // Vérification exacte (existante)
     boolean existsByEmail(String email);
+    
+    // NOUVEAU : Vérification insensible à la casse
+    boolean existsByEmailIgnoreCase(String email);
 }

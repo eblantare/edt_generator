@@ -35,6 +35,31 @@ public class AuthService {
     private static final Random RANDOM = new SecureRandom();
     
     /**
+     * Méthode utilitaire : Recherche un utilisateur par email de manière robuste
+     * (insensible à la casse et aux espaces)
+     */
+    private Utilisateur trouverUtilisateurParEmail(String email) {
+        if (email == null) return null;
+        
+        String emailNettoye = email.trim().toLowerCase();
+        
+        // 1. Essayer avec la recherche insensible à la casse
+        Utilisateur utilisateur = utilisateurRepository.findByEmailIgnoreCase(emailNettoye).orElse(null);
+        
+        // 2. Si non trouvé, essayer avec la recherche exacte (au cas où la méthode IgnoreCase ne fonctionne pas)
+        if (utilisateur == null) {
+            utilisateur = utilisateurRepository.findByEmail(emailNettoye).orElse(null);
+        }
+        
+        // 3. Si toujours non trouvé, essayer avec l'email original (trim uniquement)
+        if (utilisateur == null) {
+            utilisateur = utilisateurRepository.findByEmail(email.trim()).orElse(null);
+        }
+        
+        return utilisateur;
+    }
+    
+    /**
      * Étape 1: Demande de connexion avec email - VERSION CORRIGÉE
      */
     public DemandeConnexionResultDTO demanderConnexion(String email) {
@@ -43,19 +68,22 @@ public class AuthService {
             return new DemandeConnexionResultDTO(false, "Email requis");
         }
         
-        System.out.println("🔐 Demande de connexion pour: " + email);
+        String emailNettoye = email.trim().toLowerCase();
+        System.out.println("🔐 Demande de connexion pour: " + emailNettoye);
         
         try {
-            // Récupérer l'utilisateur
-            Utilisateur utilisateur = utilisateurRepository.findByEmail(email).orElse(null);
+            // Récupérer l'utilisateur (recherche robuste)
+            Utilisateur utilisateur = trouverUtilisateurParEmail(emailNettoye);
             
             if (utilisateur == null) {
-                System.out.println("❌ Email non trouvé: " + email);
+                System.out.println("❌ Email non trouvé: " + emailNettoye);
                 return new DemandeConnexionResultDTO(false, "Email non trouvé");
             }
             
+            System.out.println("✅ Utilisateur trouvé: " + utilisateur.getEmail());
+            
             if (!utilisateur.getEstActif()) {
-                System.out.println("❌ Compte inactif: " + email);
+                System.out.println("❌ Compte inactif: " + emailNettoye);
                 return new DemandeConnexionResultDTO(false, "Compte désactivé");
             }
             
@@ -90,7 +118,7 @@ public class AuthService {
             // SOLUTION 2: En cas d'erreur, on force la suppression par SQL natif
             try {
                 // Récupérer l'utilisateur
-                Utilisateur utilisateur = utilisateurRepository.findByEmail(email).orElse(null);
+                Utilisateur utilisateur = trouverUtilisateurParEmail(emailNettoye);
                 if (utilisateur != null) {
                     // Supprimer directement en SQL
                     entityManager.createNativeQuery("DELETE FROM codes_connexion WHERE utilisateur_id = ? AND NOT est_utilise")
@@ -209,16 +237,19 @@ public class AuthService {
     }
 
     /**
-     * Vérifier si un email existe déjà
+     * Vérifier si un email existe déjà - VERSION CORRIGÉE
      */
     public VerificationEmailResultDTO verifierEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return new VerificationEmailResultDTO(false, "Email requis");
         }
     
-        System.out.println("🔍 Vérification email: " + email);
+        String emailNettoye = email.trim().toLowerCase();
+        System.out.println("🔍 Vérification email: " + emailNettoye);
     
-        boolean existe = utilisateurRepository.existsByEmail(email);
+        // Recherche robuste
+        Utilisateur utilisateur = trouverUtilisateurParEmail(emailNettoye);
+        boolean existe = (utilisateur != null);
     
         return new VerificationEmailResultDTO(
             true, 
@@ -228,22 +259,24 @@ public class AuthService {
     }
 
     /**
-     * Inscrire un nouvel utilisateur
+     * Inscrire un nouvel utilisateur - VERSION CORRIGÉE
      */
     public InscriptionResultDTO inscrire(InscriptionDTO inscription) {
         if (inscription.getEmail() == null || inscription.getEmail().trim().isEmpty()) {
             return new InscriptionResultDTO(false, "Email requis");
         }
         
-        System.out.println("📝 Inscription nouvel utilisateur: " + inscription.getEmail());
+        String emailNettoye = inscription.getEmail().trim().toLowerCase();
+        System.out.println("📝 Inscription nouvel utilisateur: " + emailNettoye);
         
-        // Vérifier si l'email existe déjà
-        if (utilisateurRepository.existsByEmail(inscription.getEmail())) {
+        // Vérifier si l'email existe déjà (recherche robuste)
+        Utilisateur existant = trouverUtilisateurParEmail(emailNettoye);
+        if (existant != null) {
             return new InscriptionResultDTO(false, "Cet email est déjà utilisé");
         }
         
         // Créer le nouvel utilisateur
-        Utilisateur utilisateur = new Utilisateur(inscription.getEmail());
+        Utilisateur utilisateur = new Utilisateur(emailNettoye);
         utilisateur.setRole(inscription.getRole() != null ? inscription.getRole() : "CONSULTANT");
         utilisateur.setEstActif(true);
         
@@ -251,7 +284,7 @@ public class AuthService {
         
         // Générer un code de connexion
         String code = genererCode();
-        System.out.println("📧 Code généré pour " + inscription.getEmail() + ": " + code);
+        System.out.println("📧 Code généré pour " + emailNettoye + ": " + code);
         
         CodeConnexion codeConnexion = new CodeConnexion(utilisateur, code);
         codeConnexion.setDateExpiration(LocalDateTime.now().plusMinutes(10));
